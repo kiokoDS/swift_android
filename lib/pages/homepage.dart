@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swift/pages/receive.dart';
@@ -17,11 +20,24 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final LatLng center = LatLng(-1.286389, 36.817223); // Nairobi
+  final LatLng newPoint = LatLng(-1.2921, 36.8219); // Example (Kenyatta Ave)
+
+  final LatLng start = LatLng(-1.286389, 36.817223);
+  final LatLng end = LatLng(-1.2921, 36.8219);
+
+  bool loading = false;
+  final MapController _mapController = MapController();
+
   var username = "";
   var token = "";
+  List<LatLng> routePoints = [];
 
   final SearchController = TextEditingController();
 
+  final DraggableScrollableController draggableController =
+      DraggableScrollableController();
+
+  double sheetExtent = 0.8; // track current extent
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -32,10 +48,55 @@ class _HomePageState extends State<HomePage> {
     return prefs.getString("token");
   }
 
+  Future<void> fetchRoute() async {
+    setState(() {
+      loading = true;
+    });
+    const apiKey =
+        "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjZjNGY5M2ViNzJkMTQ1ODhiZGU1MDNjNjRlMjQxOTk3IiwiaCI6Im11cm11cjY0In0="; // 🔑 put your ORS key here
+    final url =
+        "https://api.openrouteservice.org/v2/directions/driving-car?api_key=$apiKey&start=${start.longitude},${start.latitude}&end=${end.longitude},${end.latitude}";
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+
+      final coords = data["features"][0]["geometry"]["coordinates"] as List;
+
+      setState(() {
+        routePoints = coords
+            .map((c) => LatLng(c[1], c[0])) // ORS gives [lon, lat]
+            .toList();
+      });
+      setState(() {
+        loading = true;
+      });
+    } else {
+      print("Failed to fetch route: ${response.body}");
+      setState(() {
+        loading = true;
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    draggableController.addListener(() {
+      setState(() {
+        sheetExtent = draggableController.size;
+      });
+    });
     getToken();
+    fetchRoute();
+    _mapController.mapEventStream.listen((event) {
+      if (loading) {
+        setState(() {
+          loading = false;
+        });
+      }
+    });
   }
 
   @override
@@ -44,6 +105,7 @@ class _HomePageState extends State<HomePage> {
       children: [
         FlutterMap(
           options: MapOptions(initialCenter: center, initialZoom: 18.0),
+          mapController: _mapController,
           children: [
             TileLayer(
               urlTemplate:
@@ -51,13 +113,41 @@ class _HomePageState extends State<HomePage> {
               userAgentPackageName: 'com.kios19.swift',
               tileProvider: NetworkTileProvider(), // optional, explicit
             ),
+            // 🔵 Polyline between them
+            PolylineLayer<Object>(
+              polylines: routePoints.isNotEmpty
+                  ? [
+                      Polyline<Object>(
+                        points: routePoints,
+                        strokeWidth: 4,
+                        color: Colors.deepOrange,
+                        strokeCap: StrokeCap.round,
+                      ),
+                    ]
+                  : [],
+            ),
+
             MarkerLayer(
               markers: [
                 Marker(
-                  point: center,
-                  width: 80,
-                  height: 80,
-                  child: Icon(Icons.location_on, color: Colors.red, size: 40),
+                  point: start,
+                  width: 40,
+                  height: 40,
+                  child: Image.asset(
+                    "assets/images/box.png",
+                    width: 40,
+                    height: 40,
+                  ),
+                ),
+                Marker(
+                  point: end,
+                  width: 40,
+                  height: 40,
+                  child: Image.asset(
+                    "assets/images/rider.png",
+                    width: 40,
+                    height: 40,
+                  ),
                 ),
               ],
             ),
@@ -84,8 +174,9 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         DraggableScrollableSheet(
+          controller: draggableController,
           initialChildSize: 0.8,
-          minChildSize: 0.1,
+          minChildSize: 0.2,
           maxChildSize: 1.0,
           builder: (context, scrollController) {
             return Container(
@@ -102,242 +193,142 @@ class _HomePageState extends State<HomePage> {
               ),
               child: Padding(
                 padding: EdgeInsets.only(left: 20, right: 20),
-                child: ListView(
+                child: SingleChildScrollView(
                   controller: scrollController,
-                  children: [
-                    Center(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 1),
-                        height: 4,
-                        width: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[400],
-                          borderRadius: BorderRadius.circular(10),
+                  child: Column(
+                    children: [
+                      Center(
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 10),
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 1),
+                            height: 4,
+                            width: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[400],
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(
-                        top: 6,
-                        bottom: 6
+                      Padding(
+                        padding: EdgeInsets.only(top: 20, bottom: 6),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            "Lets send a package",
+                            style: GoogleFonts.hindSiliguri(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 20,
+                            ),
+                          ),
+                        ),
                       ),
-                      child: Text(
-                      "Lets send a package",
-                      style: GoogleFonts.hindSiliguri(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 20,
-                      ),
-                    ),
-                    ),
 
-                    Padding(
-                      padding: EdgeInsets.only(top: 20, bottom: 20),
-                      child: GridView.count(
-                        shrinkWrap: true,
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 16,
-                        crossAxisSpacing: 16,
-                        childAspectRatio: 4 / 3,
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => SendPage(),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Padding(
-                                padding: EdgeInsets.only(top: 10),
-                                child: Column(
-                                  children: [
-                                    Image.asset(
-                                      'assets/images/box.png',
-                                      width: 50,
-                                      height: 50,
-                                      fit: BoxFit.contain,
-                                    ),
-                                    Text(
-                                      "Send",
-                                      style: GoogleFonts.hindSiliguri(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                    Text(
-                                      "package delivery",
-                                      style: GoogleFonts.hindSiliguri(
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => Receivepage(),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              height: 100,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Padding(
-                                padding: EdgeInsets.only(top: 10),
-                                child: Column(
-                                  children: [
-                                    Image.asset(
-                                      'assets/images/hands.png',
-                                      width: 50,
-                                      height: 50,
-                                      fit: BoxFit.contain,
-                                    ),
-                                    Text(
-                                      "Receive",
-                                      style: GoogleFonts.hindSiliguri(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                    Text(
-                                      "package delivery",
-                                      style: GoogleFonts.hindSiliguri(
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => Requestpage(),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Padding(
-                                padding: EdgeInsets.only(top: 10),
-                                child: Column(
-                                  children: [
-                                    Image.asset(
-                                      'assets/images/request.png',
-                                      width: 50,
-                                      height: 50,
-                                      fit: BoxFit.contain,
-                                    ),
-                                    Text(
-                                      "Request",
-                                      style: GoogleFonts.hindSiliguri(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                    Text(
-                                      "special request",
-                                      style: GoogleFonts.hindSiliguri(
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => Riders(),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Padding(
-                                padding: EdgeInsetsGeometry.only(top: 10),
-                                child: Column(
-                                  children: [
-                                    Image.asset(
-                                      'assets/images/rider.png',
-                                      width: 50,
-                                      height: 50,
-                                      fit: BoxFit.contain,
-                                    ),
-                                    Text(
-                                      "Riders",
-                                      style: GoogleFonts.hindSiliguri(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                    Text(
-                                      "previous riders",
-                                      style: GoogleFonts.hindSiliguri(
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          
-                        ],
+                      // ✅ search box floats up when minimized
+                      AnimatedSwitcher(
+                        duration: Duration(milliseconds: 300),
+                        child: sheetExtent <= 0.35
+                            ? _buildSearchBox() // show directly under title
+                            : SizedBox.shrink(),
                       ),
-                    ),
-                    Padding(
-                            padding: EdgeInsets.only(top: 10),
-                            child: Container(
-                              height: 60,
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade200,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: TextField(
-                                controller: SearchController,
-                                style: GoogleFonts.hindSiliguri(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,  ),
-                                decoration: InputDecoration(
-                                  border: InputBorder.none,
-                                  hintText: "Send where?",
-                                  icon: Icon(FeatherIcons.search),
+
+                      Padding(
+                        padding: EdgeInsets.only(top: 10, bottom: 20),
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 20, bottom: 20),
+                          child: GridView.builder(
+                            shrinkWrap: true,
+                            physics:
+                                NeverScrollableScrollPhysics(), // ✅ disables nested scrolling
+                            itemCount: 4,
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  mainAxisSpacing: 16,
+                                  crossAxisSpacing: 16,
+                                  childAspectRatio: 4 / 3,
                                 ),
-                              ),
-                            ),
+                            itemBuilder: (context, index) {
+                              final items = [
+                                {
+                                  "title": "Send",
+                                  "subtitle": "package delivery",
+                                  "asset": "assets/images/box.png",
+                                  "page": SendPage(),
+                                },
+                                {
+                                  "title": "Receive",
+                                  "subtitle": "package delivery",
+                                  "asset": "assets/images/hands.png",
+                                  "page": Receivepage(),
+                                },
+                                {
+                                  "title": "Request",
+                                  "subtitle": "special request",
+                                  "asset": "assets/images/request.png",
+                                  "page": Requestpage(),
+                                },
+                                {
+                                  "title": "Riders",
+                                  "subtitle": "previous riders",
+                                  "asset": "assets/images/rider.png",
+                                  "page": Riders(),
+                                },
+                              ];
+                              final item = items[index];
+                              return GestureDetector(
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => item["page"] as Widget,
+                                  ),
+                                ),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Padding(
+                                    padding: EdgeInsets.only(top: 10),
+                                    child: Column(
+                                      children: [
+                                        Image.asset(
+                                          item["asset"] as String,
+                                          width: 50,
+                                          height: 50,
+                                        ),
+                                        Text(
+                                          item["title"] as String,
+                                          style: GoogleFonts.hindSiliguri(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 18,
+                                          ),
+                                        ),
+                                        Text(
+                                          item["subtitle"] as String,
+                                          style: GoogleFonts.hindSiliguri(
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                  ],
+                        ),
+                      ),
+                      // ✅ search box when expanded
+                      AnimatedSwitcher(
+                        duration: Duration(milliseconds: 300),
+                        child: sheetExtent > 0.3
+                            ? _buildSearchBox()
+                            : SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -346,4 +337,57 @@ class _HomePageState extends State<HomePage> {
       ],
     );
   }
+
+  Widget _buildSearchBox() {
+    return Padding(
+      padding: EdgeInsets.only(top: 10),
+      child: Container(
+        height: 60,
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: TextField(
+          controller: SearchController,
+          style: GoogleFonts.hindSiliguri(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
+          decoration: InputDecoration(
+            border: InputBorder.none,
+            hintText: "Send where?",
+            icon: Icon(FeatherIcons.search),
+          ),
+        ),
+      ),
+    );
+  }
+
+  final List<Map<String, dynamic>> items = [
+    {
+      "title": "Send",
+      "subtitle": "package delivery",
+      "asset": "assets/images/box.png",
+      "page": SendPage(),
+    },
+    {
+      "title": "Receive",
+      "subtitle": "package delivery",
+      "asset": "assets/images/hands.png",
+      "page": Receivepage(),
+    },
+    {
+      "title": "Request",
+      "subtitle": "special request",
+      "asset": "assets/images/request.png",
+      "page": Requestpage(),
+    },
+    {
+      "title": "Riders",
+      "subtitle": "previous riders",
+      "asset": "assets/images/rider.png",
+      "page": Riders(),
+    },
+  ];
 }
