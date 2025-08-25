@@ -170,7 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                           child: _isLoading
                               ? LoadingIndicator(
-                                  indicatorType: Indicator.ballSpinFadeLoader,
+                                  indicatorType: Indicator.ballPulseSync,
                                   colors: const [Colors.white],
                                   strokeWidth: 2,
                                 )

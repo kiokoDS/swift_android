@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class OrdersPage extends StatefulWidget {
   @override
@@ -8,21 +9,31 @@ class OrdersPage extends StatefulWidget {
 }
 
 class _OrdersPageState extends State<OrdersPage> {
+  var token = "";
+
   final Dio dio = Dio();
   List<dynamic> orders = [];
   bool isLoading = true;
 
+  Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      token = prefs.getString("token")!;
+    });
+    return prefs.getString("token");
+  }
+
   @override
   void initState() {
     super.initState();
+    getToken();
     fetchOrders();
   }
 
   Future<void> fetchOrders() async {
-    var headers = {
-      'Authorization':
-          'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6IiIsImV4cCI6MTc1NjExNjgxMywicGhvbmUiOiIwNzc3Nzc3Nzc3Iiwicm9sZV9pZCI6MiwidXNlcl9pZCI6MiwidXNlcm5hbWUiOiJkZmQifQ.t5tRCkVnhWUB4yq0HvSkAcB29B_2w3HCzDpvx_OExA0',
-    };
+    var key = await getToken();
+    var headers = {'Authorization': "Bearer ${key}"};
 
     try {
       var response = await dio.request(
@@ -39,10 +50,12 @@ class _OrdersPageState extends State<OrdersPage> {
         });
       } else {
         print("Error: ${response.statusMessage}");
+        print("Token: $token");
         setState(() => isLoading = false);
       }
     } catch (e) {
       print("Exception: $e");
+      print(headers);
       setState(() => isLoading = false);
     }
   }
@@ -62,9 +75,7 @@ class _OrdersPageState extends State<OrdersPage> {
         backgroundColor: Colors.white,
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator(
-            color: Colors.deepOrange,
-          ))
+          ? Center(child: CircularProgressIndicator(color: Colors.deepOrange))
           : orders.isEmpty
           ? Center(child: Text("No orders found"))
           : ListView.builder(
@@ -103,17 +114,14 @@ class _OrdersPageState extends State<OrdersPage> {
                             color: Colors.deepOrange[300],
                           ),
                           child: Padding(
-                            padding: EdgeInsetsGeometry.only(
-                              left: 6,
-                              right: 6
-                              ),
+                            padding: EdgeInsetsGeometry.only(left: 6, right: 6),
                             child: Text(
                               " ${order["status"] ?? "N/A"}",
                               style: GoogleFonts.hindSiliguri(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white
-                                ),
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
