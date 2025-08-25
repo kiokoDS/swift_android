@@ -37,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await dio.post(
-        "https://3ccb08a66ef8.ngrok-free.app/login",
+        "http://209.126.8.100:4141/login",
         data: {
           "username": EmailController.text,
           "password": PasswordController.text,
@@ -117,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: TextField(
                           controller: EmailController,
-                          style: GoogleFonts.hindSiliguri(),
+                          style: GoogleFonts.hindSiliguri(fontSize: 14),
                           decoration: InputDecoration(
                             hintText: "Enter your email",
                             border: InputBorder
@@ -143,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: TextField(
                           controller: PasswordController,
                           textAlignVertical: TextAlignVertical.center,
-                          style: GoogleFonts.hindSiliguri(),
+                          style: GoogleFonts.hindSiliguri(fontSize: 14),
                           obscureText: true,
                           decoration: InputDecoration(
                             hintText: "Enter your password",

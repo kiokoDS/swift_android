@@ -8,12 +8,12 @@ import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:new_loading_indicator/new_loading_indicator.dart';
 
-class SendPage extends StatefulWidget {
+class Requestpage extends StatefulWidget {
   @override
-  State<SendPage> createState() => _SendPageState();
+  State<Requestpage> createState() => _RequestPageState();
 }
 
-class _SendPageState extends State<SendPage> {
+class _RequestPageState extends State<Requestpage> {
   Future<Position> _getCurrentLocation() async {
     // Ask for permission
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -58,7 +58,7 @@ class _SendPageState extends State<SendPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Send to", style: GoogleFonts.hindSiliguri(fontSize: 20, fontWeight: FontWeight.w800)),
+        title: Text("Special Request", style: GoogleFonts.hindSiliguri(fontSize: 20, fontWeight: FontWeight.w800)),
       ),
       body: Column(
         children: [

@@ -5,6 +5,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:swift/pages/receive.dart';
+import 'package:swift/pages/request.dart';
+import 'package:swift/pages/riders.dart';
 import 'package:swift/pages/send.dart';
 
 class HomePage extends StatefulWidget {
@@ -16,6 +19,8 @@ class _HomePageState extends State<HomePage> {
   final LatLng center = LatLng(-1.286389, 36.817223); // Nairobi
   var username = "";
   var token = "";
+
+  final SearchController = TextEditingController();
 
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -79,9 +84,9 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         DraggableScrollableSheet(
-          initialChildSize: 0.5,
+          initialChildSize: 0.8,
           minChildSize: 0.1,
-          maxChildSize: 0.5,
+          maxChildSize: 1.0,
           builder: (context, scrollController) {
             return Container(
               decoration: BoxDecoration(
@@ -111,12 +116,18 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
-                    Text(
+                    Padding(
+                      padding: EdgeInsets.only(
+                        top: 6,
+                        bottom: 6
+                      ),
+                      child: Text(
                       "Lets send a package",
                       style: GoogleFonts.hindSiliguri(
                         fontWeight: FontWeight.w800,
                         fontSize: 20,
                       ),
+                    ),
                     ),
 
                     Padding(
@@ -171,7 +182,14 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                           GestureDetector(
-                            onTap: () {},
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => Receivepage(),
+                                ),
+                              );
+                            },
                             child: Container(
                               height: 100,
                               decoration: BoxDecoration(
@@ -207,7 +225,14 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                           GestureDetector(
-                            onTap: () {},
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => Requestpage(),
+                                ),
+                              );
+                            },
                             child: Container(
                               decoration: BoxDecoration(
                                 color: Colors.grey[200],
@@ -242,7 +267,14 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                           GestureDetector(
-                            onTap: () {},
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => Riders(),
+                                ),
+                              );
+                            },
                             child: Container(
                               decoration: BoxDecoration(
                                 color: Colors.grey[200],
@@ -276,9 +308,35 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ),
                           ),
+                          
                         ],
                       ),
                     ),
+                    Padding(
+                            padding: EdgeInsets.only(top: 10),
+                            child: Container(
+                              height: 60,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: TextField(
+                                controller: SearchController,
+                                style: GoogleFonts.hindSiliguri(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,  ),
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  hintText: "Send where?",
+                                  icon: Icon(FeatherIcons.search),
+                                ),
+                              ),
+                            ),
+                          ),
                   ],
                 ),
               ),

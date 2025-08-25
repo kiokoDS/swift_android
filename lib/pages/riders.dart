@@ -2,12 +2,12 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class OrdersPage extends StatefulWidget {
+class Riders extends StatefulWidget {
   @override
-  State<OrdersPage> createState() => _OrdersPageState();
+  State<Riders> createState() => _RidersPageState();
 }
 
-class _OrdersPageState extends State<OrdersPage> {
+class _RidersPageState extends State<Riders> {
   final Dio dio = Dio();
   List<dynamic> orders = [];
   bool isLoading = true;
@@ -26,7 +26,7 @@ class _OrdersPageState extends State<OrdersPage> {
 
     try {
       var response = await dio.request(
-        'http://209.126.8.100:4141/api/orders/all?page=0',
+        'http://209.126.8.100:4141/api/drivers/all?page=0',
         options: Options(method: 'GET', headers: headers),
       );
 
@@ -53,7 +53,7 @@ class _OrdersPageState extends State<OrdersPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
-          "Orders",
+          "Riders",
           style: GoogleFonts.hindSiliguri(
             fontSize: 20,
             fontWeight: FontWeight.w800,
@@ -66,7 +66,7 @@ class _OrdersPageState extends State<OrdersPage> {
             color: Colors.deepOrange,
           ))
           : orders.isEmpty
-          ? Center(child: Text("No orders found"))
+          ? Center(child: Text("No history found"))
           : ListView.builder(
               itemCount: orders.length,
               itemBuilder: (context, index) {

@@ -183,7 +183,7 @@ class _IndexAppState extends State<Indexpage> {
               leading: Icon(FeatherIcons.phoneCall, size: 20),
               title: Text(
                 "Support",
-                style: GoogleFonts.hindSiliguri(fontSize: 14),
+                style: GoogleFonts.hindSiliguri(fontSize: 14, fontWeight: FontWeight.w600 ),
               ),
               onTap: () => _onItemTapped(2),
             ),
