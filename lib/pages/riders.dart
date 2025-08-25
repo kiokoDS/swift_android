@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 class Riders extends StatefulWidget {
   @override
@@ -12,6 +14,11 @@ class _RidersPageState extends State<Riders> {
   List<dynamic> orders = [];
   bool isLoading = true;
 
+  Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString("token");
+  }
+
   @override
   void initState() {
     super.initState();
@@ -19,10 +26,8 @@ class _RidersPageState extends State<Riders> {
   }
 
   Future<void> fetchOrders() async {
-    var headers = {
-      'Authorization':
-          'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6IiIsImV4cCI6MTc1NjExNjgxMywicGhvbmUiOiIwNzc3Nzc3Nzc3Iiwicm9sZV9pZCI6MiwidXNlcl9pZCI6MiwidXNlcm5hbWUiOiJkZmQifQ.t5tRCkVnhWUB4yq0HvSkAcB29B_2w3HCzDpvx_OExA0',
-    };
+    var key = await getToken();
+    var headers = {'Authorization': 'Bearer $key'};
 
     try {
       var response = await dio.request(
@@ -32,9 +37,7 @@ class _RidersPageState extends State<Riders> {
 
       if (response.statusCode == 200) {
         setState(() {
-          orders =
-              response.data["items"] ??
-              response.data; // Adjust depending on API structure
+          orders = response.data["items"] ?? response.data;
           isLoading = false;
         });
       } else {
@@ -54,82 +57,151 @@ class _RidersPageState extends State<Riders> {
       appBar: AppBar(
         title: Text(
           "Riders",
-          style: GoogleFonts.hindSiliguri(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-          ),
+          style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: false,
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator(
-            color: Colors.deepOrange,
-          ))
+          ? Center(child: CircularProgressIndicator(color: Colors.deepOrange))
           : orders.isEmpty
-          ? Center(child: Text("No history found"))
+          ? Center(
+              child: Text(
+                "No riders found",
+                style: GoogleFonts.hindSiliguri(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
+              ),
+            )
           : ListView.builder(
+              padding: EdgeInsets.all(12),
               itemCount: orders.length,
               itemBuilder: (context, index) {
                 final order = orders[index];
+                var ff = DateTime.tryParse(order["createdAt"]);
 
-                return Card(
-                  color: Colors.white,
-                  margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  child: ListTile(
-                    title: Padding(
-                      padding: EdgeInsetsGeometry.only(bottom: 10),
-                      child: Text(
-                        "${order["orderId"] ?? "N/A"}",
-                        style: GoogleFonts.hindSiliguri(fontSize: 10),
-                      ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 4),
-                        Text(
-                          "From: ${order["pickupAddress"] ?? "N/A"}",
-                          style: GoogleFonts.hindSiliguri(fontSize: 14),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          "To: ${order["dropoffAddress"] ?? "N/A"}",
-                          style: GoogleFonts.hindSiliguri(fontSize: 14),
-                        ),
-                        SizedBox(height: 2),
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            color: Colors.deepOrange[300],
-                          ),
-                          child: Padding(
-                            padding: EdgeInsetsGeometry.only(
-                              left: 6,
-                              right: 6
-                              ),
-                            child: Text(
-                              " ${order["status"] ?? "N/A"}",
-                              style: GoogleFonts.hindSiliguri(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white
-                                ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    trailing: Text(
-                      "Ksh: ${order["price"] ?? "N/A"}",
-                      style: GoogleFonts.hindSiliguri(
-                        fontWeight: FontWeight.w900,
-                        color: Colors.green,
-                      ),
-                    ),
-                  ),
+                return RiderCard(
+                  name: order["User"]["Username"] ?? "N/A",
+                  licensePlate: order["licensePlate"] ?? "N/A",
+                  rating: order["rating"]?.toString() ?? "N/A",
+                  createdAt: ff,
                 );
               },
             ),
+    );
+  }
+}
+
+class RiderCard extends StatelessWidget {
+  final String name;
+  final String licensePlate;
+  final String rating;
+  final DateTime? createdAt;
+
+  const RiderCard({
+    super.key,
+    required this.name,
+    required this.licensePlate,
+    required this.rating,
+    this.createdAt,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 1,
+      color: Colors.orange[100],
+      margin: EdgeInsets.symmetric(vertical: 8),
+
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            // Rider Image
+            Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                image: DecorationImage(
+                  image: AssetImage("assets/images/rider.png"),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            SizedBox(width: 16),
+            // Rider Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: GoogleFonts.hindSiliguri(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.deepOrange.shade700,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    "Plates: $licensePlate",
+                    style: GoogleFonts.hindSiliguri(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    "Rider since: ${createdAt != null ? timeago.format(createdAt!) : "N/A"}",
+                    style: GoogleFonts.hindSiliguri(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.star, color: Colors.yellow.shade700, size: 16),
+                      SizedBox(width: 4),
+                      Text(
+                        rating,
+                        style: GoogleFonts.hindSiliguri(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Spacer(),
+                      ElevatedButton(
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepOrange,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 8,
+                          ),
+                        ),
+                        child: Text(
+                          "Report",
+                          style: GoogleFonts.hindSiliguri(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

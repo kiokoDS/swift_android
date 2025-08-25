@@ -30,6 +30,8 @@ dependencies:
   flutter_paystack_plus: ^2.2.2
   flutter_paystack_max: ^1.0.6
   choice: ^2.3.2
+  currency_formatter: ^2.3.0
+  timeago: ^3.7.1
 
 
 

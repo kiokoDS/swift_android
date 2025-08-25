@@ -211,18 +211,54 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                       ),
-                      Padding(
-                        padding: EdgeInsets.only(top: 20, bottom: 6),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            "Lets send a package",
-                            style: GoogleFonts.hindSiliguri(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 20,
-                            ),
-                          ),
-                        ),
+
+                      AnimatedSwitcher(
+                        duration: Duration(milliseconds: 300),
+                        child: sheetExtent >= 0.95
+                            ? Padding(
+                                padding: EdgeInsets.only(top: 20, bottom: 6),
+                                child: Row(
+                                  children: [
+                                    Padding(
+                                      padding: EdgeInsets.only(right: 10),
+                                      child: IconButton(
+                                        onPressed: () {
+                                          Scaffold.of(context).openDrawer();
+                                        },
+                                        icon: Icon(Icons.menu),
+                                      ),
+                                    ),
+                                    Text(
+                                      "Lets send a package",
+                                      style: GoogleFonts.hindSiliguri(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 20,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ) // show directly under title
+                            : SizedBox.shrink(),
+                      ),
+
+                      AnimatedSwitcher(
+                        duration: Duration(milliseconds: 300),
+                        child: sheetExtent < 0.95
+                            ? Padding(
+                                padding: EdgeInsets.only(top: 20, bottom: 6),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    "Lets send a package",
+                                    style: GoogleFonts.hindSiliguri(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            // show directly under title
+                            : SizedBox.shrink(),
                       ),
 
                       // ✅ search box floats up when minimized

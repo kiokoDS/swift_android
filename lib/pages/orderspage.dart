@@ -65,6 +65,7 @@ class _OrdersPageState extends State<OrdersPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: Text(
           "Orders",
           style: GoogleFonts.hindSiliguri(
@@ -72,7 +73,6 @@ class _OrdersPageState extends State<OrdersPage> {
             fontWeight: FontWeight.w800,
           ),
         ),
-        backgroundColor: Colors.white,
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator(color: Colors.deepOrange))
@@ -89,48 +89,90 @@ class _OrdersPageState extends State<OrdersPage> {
                   child: ListTile(
                     title: Padding(
                       padding: EdgeInsetsGeometry.only(bottom: 10),
-                      child: Text(
-                        "${order["orderId"] ?? "N/A"}",
-                        style: GoogleFonts.hindSiliguri(fontSize: 10),
+                      child: Row(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.orangeAccent[100],
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Image.asset(
+                                "assets/images/box.png",
+                                fit: BoxFit.cover,
+                                height: 30,
+                                width: 30,
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsetsGeometry.only(left: 10),
+                            child: Text(
+                              "${order["orderId"] ?? "N/A"}",
+                              style: GoogleFonts.hindSiliguri(fontSize: 10),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(height: 4),
                         Text(
                           "From: ${order["pickupAddress"] ?? "N/A"}",
-                          style: GoogleFonts.hindSiliguri(fontSize: 14),
+                          style: GoogleFonts.hindSiliguri(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         SizedBox(height: 2),
                         Text(
                           "To: ${order["dropoffAddress"] ?? "N/A"}",
-                          style: GoogleFonts.hindSiliguri(fontSize: 14),
-                        ),
-                        SizedBox(height: 2),
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            color: Colors.deepOrange[300],
-                          ),
-                          child: Padding(
-                            padding: EdgeInsetsGeometry.only(left: 6, right: 6),
-                            child: Text(
-                              " ${order["status"] ?? "N/A"}",
-                              style: GoogleFonts.hindSiliguri(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
+                          style: GoogleFonts.hindSiliguri(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
+                        SizedBox(height: 10),
+
+                        LinearProgressIndicator(
+                          value: 0.2, // value between 0.0 and 1.0
+                          minHeight: 8,
+                          borderRadius: BorderRadius.circular(10),
+                          backgroundColor: Colors.grey[300],
+                          color: Colors.deepOrange, // filled color
+                        ),
+
+                        // Container(
+                        //   decoration: BoxDecoration(
+                        //     borderRadius: BorderRadius.circular(10),
+                        //     color: Colors.grey[700],
+                        //   ),
+                        //   child: Padding(
+                        //     padding: EdgeInsetsGeometry.only(
+                        //       left: 10,
+                        //       right: 10,
+                        //     ),
+                        //     child: Text(
+                        //       " ${order["status"] ?? "N/A"}",
+                        //       style: GoogleFonts.hindSiliguri(
+                        //         fontSize: 10,
+                        //         fontWeight: FontWeight.w600,
+                        //         color: Colors.white,
+                        //       ),
+                        //     ),
+                        //   ),
+                        // ),
                       ],
                     ),
                     trailing: Text(
-                      "Ksh: ${order["price"] ?? "N/A"}",
+                      "KES: ${order["price"] ?? "N/A"}",
                       style: GoogleFonts.hindSiliguri(
                         fontWeight: FontWeight.w900,
+                        fontSize: 14,
                         color: Colors.green,
                       ),
                     ),
