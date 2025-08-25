@@ -26,6 +26,7 @@ dependencies:
   shared_preferences: ^2.5.3
   geolocator: ^12.0.0
   phone_form_field: ^10.0.8
+  flutter_native_splash: ^2.4.6
 
 dev_dependencies:
   flutter_test:
@@ -40,3 +41,10 @@ flutter:
     - assets/images/request.png
     - assets/images/rider.png
     - assets/images/logo.png
+
+# 👇 flutter_native_splash config goes here
+flutter_native_splash:
+  color: "#fc670a"           # background color
+  image: assets/images/logo.png
+  android: true
+  ios: true
