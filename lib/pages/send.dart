@@ -181,10 +181,7 @@ class _SendPageState extends State<SendPage> {
         backgroundColor: Colors.white,
         title: Text(
           "Send to",
-          style: GoogleFonts.hindSiliguri(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-          ),
+          style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800),
         ),
       ),
       body: SingleChildScrollView(
@@ -202,7 +199,7 @@ class _SendPageState extends State<SendPage> {
                       children: [
                         Text(
                           "Location details",
-                          style: GoogleFonts.hindSiliguri(
+                          style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                           ),
@@ -226,7 +223,7 @@ class _SendPageState extends State<SendPage> {
                       ),
                       child: TextField(
                         controller: locationController,
-                        style: GoogleFonts.hindSiliguri(fontSize: 14),
+                        style: GoogleFonts.inter(fontSize: 14),
                         decoration: InputDecoration(
                           border: InputBorder.none,
                           hintText: "Current location",
@@ -256,7 +253,7 @@ class _SendPageState extends State<SendPage> {
                       ),
                       child: TextField(
                         controller: destinationController,
-                        style: GoogleFonts.hindSiliguri(fontSize: 14),
+                        style: GoogleFonts.inter(fontSize: 14),
                         decoration: InputDecoration(
                           border: InputBorder.none,
                           hintText: "Enter delivery location",
@@ -276,7 +273,7 @@ class _SendPageState extends State<SendPage> {
                       children: [
                         Text(
                           "Contact details",
-                          style: GoogleFonts.hindSiliguri(
+                          style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                           ),
@@ -300,7 +297,7 @@ class _SendPageState extends State<SendPage> {
                       ),
                       child: TextField(
                         controller: nameController,
-                        style: GoogleFonts.hindSiliguri(fontSize: 14),
+                        style: GoogleFonts.inter(fontSize: 14),
                         decoration: InputDecoration(
                           border: InputBorder.none,
                           hintText: "Contact Name",
@@ -323,7 +320,7 @@ class _SendPageState extends State<SendPage> {
                       ),
                       child: TextField(
                         controller: phoneController,
-                        style: GoogleFonts.hindSiliguri(fontSize: 14),
+                        style: GoogleFonts.inter(fontSize: 14),
                         decoration: InputDecoration(
                           border: InputBorder.none,
                           hintText: "Contact phone number",
@@ -346,7 +343,7 @@ class _SendPageState extends State<SendPage> {
                       ),
                       child: TextField(
                         keyboardType: TextInputType.multiline,
-                        style: GoogleFonts.hindSiliguri(fontSize: 14),
+                        style: GoogleFonts.inter(fontSize: 14),
                         maxLines: 3,
                         minLines: 3,
                         controller: descriptionController,
@@ -365,7 +362,7 @@ class _SendPageState extends State<SendPage> {
                       children: [
                         Text(
                           "Payment Details",
-                          style: GoogleFonts.hindSiliguri(
+                          style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                           ),
@@ -407,7 +404,7 @@ class _SendPageState extends State<SendPage> {
                                   SizedBox(width: 10),
                                   Text(
                                     choice,
-                                    style: GoogleFonts.hindSiliguri(
+                                    style: GoogleFonts.inter(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w800,
                                     ),
@@ -439,7 +436,7 @@ class _SendPageState extends State<SendPage> {
                               child: PhoneFormField(
                                 textAlign: TextAlign.center,
                                 controller: mpesaphoneController,
-                                style: GoogleFonts.hindSiliguri(fontSize: 14),
+                                style: GoogleFonts.inter(fontSize: 14),
                                 decoration: InputDecoration(
                                   border: InputBorder.none,
                                   hintText: "Contact phone number",
@@ -496,7 +493,7 @@ class _SendPageState extends State<SendPage> {
                               )
                             : Text(
                                 "Next",
-                                style: GoogleFonts.hindSiliguri(
+                                style: GoogleFonts.inter(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w800,
                                 ),

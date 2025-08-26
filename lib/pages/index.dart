@@ -83,14 +83,14 @@ class _IndexAppState extends State<Indexpage> {
                         children: [
                           Text(
                             username,
-                            style: GoogleFonts.hindSiliguri(
+                            style: GoogleFonts.inter(
                               fontWeight: FontWeight.w700,
                               fontSize: 18,
                             ),
                           ),
                           Text(
                             "my account",
-                            style: GoogleFonts.hindSiliguri(
+                            style: GoogleFonts.inter(
                               fontWeight: FontWeight.w400,
                               fontSize: 14,
                             ),
@@ -103,17 +103,17 @@ class _IndexAppState extends State<Indexpage> {
                     padding: EdgeInsets.only(top: 15),
                     child: Row(
                       children: [
-                        Icon(FeatherIcons.star, size: 10),
+                        Icon(Icons.star, size: 10),
                         Text(
                           "  5.0",
-                          style: GoogleFonts.hindSiliguri(
+                          style: GoogleFonts.inter(
                             fontWeight: FontWeight.w400,
                             fontSize: 13,
                           ),
                         ),
                         Text(
                           " rating",
-                          style: GoogleFonts.hindSiliguri(
+                          style: GoogleFonts.inter(
                             fontWeight: FontWeight.w400,
                             fontSize: 13,
                           ),
@@ -128,7 +128,7 @@ class _IndexAppState extends State<Indexpage> {
               leading: Icon(FeatherIcons.creditCard, size: 20),
               title: Text(
                 "Payments",
-                style: GoogleFonts.hindSiliguri(
+                style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -136,32 +136,22 @@ class _IndexAppState extends State<Indexpage> {
               onTap: () => _onItemTapped(0),
             ),
             ListTile(
-              leading: Icon(FeatherIcons.tag, size: 20),
+              leading: Icon(Icons.card_giftcard, size: 20),
               title: Text(
                 "Promotions",
-                style: GoogleFonts.hindSiliguri(
+                style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               onTap: () => _onItemTapped(1),
             ),
+
             ListTile(
-              leading: Icon(FeatherIcons.activity, size: 20),
-              title: Text(
-                "My Rides",
-                style: GoogleFonts.hindSiliguri(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              onTap: () => _onItemTapped(2),
-            ),
-            ListTile(
-              leading: Icon(FeatherIcons.shield, size: 20),
+              leading: Icon(Icons.shield_moon, size: 20),
               title: Text(
                 "Safety",
-                style: GoogleFonts.hindSiliguri(
+                style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -169,10 +159,10 @@ class _IndexAppState extends State<Indexpage> {
               onTap: () => _onItemTapped(2),
             ),
             ListTile(
-              leading: Icon(FeatherIcons.dollarSign, size: 20),
+              leading: Icon(Icons.money, size: 20),
               title: Text(
                 "Expenses",
-                style: GoogleFonts.hindSiliguri(
+                style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -183,7 +173,10 @@ class _IndexAppState extends State<Indexpage> {
               leading: Icon(FeatherIcons.phoneCall, size: 20),
               title: Text(
                 "Support",
-                style: GoogleFonts.hindSiliguri(fontSize: 14, fontWeight: FontWeight.w600 ),
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               onTap: () => _onItemTapped(2),
             ),
@@ -191,7 +184,7 @@ class _IndexAppState extends State<Indexpage> {
               leading: Icon(FeatherIcons.info, size: 20),
               title: Text(
                 "About",
-                style: GoogleFonts.hindSiliguri(
+                style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -206,18 +199,19 @@ class _IndexAppState extends State<Indexpage> {
         backgroundColor: Colors.white,
         currentIndex: _selectedIndex,
         iconSize: 20,
-        selectedLabelStyle: GoogleFonts.hindSiliguri(
-          fontWeight: FontWeight.w900,
-        ),
-        unselectedLabelStyle: GoogleFonts.hindSiliguri(
-          fontWeight: FontWeight.w700,
-        ),
+        selectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w900),
+        unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700),
         onTap: _onItemTapped,
         items: const [
-          BottomNavigationBarItem(icon: Icon(FeatherIcons.home), label: "Home"),
           BottomNavigationBarItem(
-            icon: Icon(FeatherIcons.package),
+            icon: Icon(FeatherIcons.home),
+            activeIcon: Icon(Icons.home),
+            label: "Home",
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.inventory_2_outlined),
             label: "Orders",
+            activeIcon: Icon(Icons.inventory),
           ),
           BottomNavigationBarItem(
             icon: Icon(FeatherIcons.user),

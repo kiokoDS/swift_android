@@ -58,7 +58,10 @@ class _ReceivePageState extends State<Receivepage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Receive item", style: GoogleFonts.hindSiliguri(fontSize: 20, fontWeight: FontWeight.w800)),
+        title: Text(
+          "Receive item",
+          style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800),
+        ),
       ),
       body: Column(
         children: [
@@ -67,19 +70,21 @@ class _ReceivePageState extends State<Receivepage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Padding(padding: EdgeInsets.only(top: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Location details",
-                      style: GoogleFonts.hindSiliguri(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
+                Padding(
+                  padding: EdgeInsets.only(top: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Location details",
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                  ],
-                ),),
+                    ],
+                  ),
+                ),
                 Divider(),
 
                 Padding(
@@ -93,7 +98,7 @@ class _ReceivePageState extends State<Receivepage> {
                     ),
                     child: TextField(
                       controller: locationController,
-                      style: GoogleFonts.hindSiliguri(fontSize: 14),
+                      style: GoogleFonts.inter(fontSize: 14),
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         hintText: "Current location",
@@ -113,7 +118,7 @@ class _ReceivePageState extends State<Receivepage> {
                     ),
                     child: TextField(
                       controller: locationController,
-                      style: GoogleFonts.hindSiliguri(fontSize: 14),
+                      style: GoogleFonts.inter(fontSize: 14),
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         hintText: "Enter delivery location",
@@ -123,19 +128,21 @@ class _ReceivePageState extends State<Receivepage> {
                   ),
                 ),
 
-                Padding(padding: EdgeInsets.only(top: 40)
-                ,child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Contact details",
-                      style: GoogleFonts.hindSiliguri(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
+                Padding(
+                  padding: EdgeInsets.only(top: 40),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Contact details",
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                  ],
-                ),),
+                    ],
+                  ),
+                ),
 
                 Divider(),
                 Padding(
@@ -149,7 +156,7 @@ class _ReceivePageState extends State<Receivepage> {
                     ),
                     child: TextField(
                       controller: locationController,
-                      style: GoogleFonts.hindSiliguri(fontSize: 14),
+                      style: GoogleFonts.inter(fontSize: 14),
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         hintText: "Contact Name",
@@ -169,7 +176,7 @@ class _ReceivePageState extends State<Receivepage> {
                     ),
                     child: TextField(
                       controller: locationController,
-                      style: GoogleFonts.hindSiliguri(fontSize: 14),
+                      style: GoogleFonts.inter(fontSize: 14),
                       decoration: InputDecoration(
                         border: InputBorder.none,
                         hintText: "Contact phone number",
@@ -189,7 +196,7 @@ class _ReceivePageState extends State<Receivepage> {
                     ),
                     child: TextField(
                       keyboardType: TextInputType.multiline,
-                      style: GoogleFonts.hindSiliguri(fontSize: 14),
+                      style: GoogleFonts.inter(fontSize: 14),
                       maxLines: 3,
                       minLines: 3,
                       controller: locationController,
@@ -202,36 +209,34 @@ class _ReceivePageState extends State<Receivepage> {
                   ),
                 ),
                 Padding(
-                      padding: EdgeInsets.only(top: 30),
-                      child: Container(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            backgroundColor: Colors.orange[700],
-                          ),
-                          onPressed: () {
-
-                          },
-                          child: _isLoading
-                              ? LoadingIndicator(
-                                  indicatorType: Indicator.ballSpinFadeLoader,
-                                  colors: const [Colors.white],
-                                  strokeWidth: 2,
-                                )
-                              : Text(
-                                  "Submit",
-                                  style: GoogleFonts.hindSiliguri(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
+                  padding: EdgeInsets.only(top: 30),
+                  child: Container(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
                         ),
+                        backgroundColor: Colors.orange[700],
                       ),
+                      onPressed: () {},
+                      child: _isLoading
+                          ? LoadingIndicator(
+                              indicatorType: Indicator.ballSpinFadeLoader,
+                              colors: const [Colors.white],
+                              strokeWidth: 2,
+                            )
+                          : Text(
+                              "Submit",
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                     ),
+                  ),
+                ),
               ],
             ),
           ),

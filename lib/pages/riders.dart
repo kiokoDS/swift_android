@@ -57,7 +57,7 @@ class _RidersPageState extends State<Riders> {
       appBar: AppBar(
         title: Text(
           "Riders",
-          style: GoogleFonts.hindSiliguri(fontWeight: FontWeight.bold),
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -69,10 +69,7 @@ class _RidersPageState extends State<Riders> {
           ? Center(
               child: Text(
                 "No riders found",
-                style: GoogleFonts.hindSiliguri(
-                  fontSize: 16,
-                  color: Colors.grey[600],
-                ),
+                style: GoogleFonts.inter(fontSize: 16, color: Colors.grey[600]),
               ),
             )
           : ListView.builder(
@@ -139,7 +136,7 @@ class RiderCard extends StatelessWidget {
                 children: [
                   Text(
                     name,
-                    style: GoogleFonts.hindSiliguri(
+                    style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.deepOrange.shade700,
@@ -148,53 +145,42 @@ class RiderCard extends StatelessWidget {
                   SizedBox(height: 4),
                   Text(
                     "Plates: $licensePlate",
-                    style: GoogleFonts.hindSiliguri(
+                    style: GoogleFonts.inter(
                       fontSize: 14,
                       color: Colors.grey[700],
                     ),
                   ),
                   SizedBox(height: 4),
                   Text(
-                    "Rider since: ${createdAt != null ? timeago.format(createdAt!) : "N/A"}",
-                    style: GoogleFonts.hindSiliguri(
+                    "Last delivery: ${createdAt != null ? timeago.format(createdAt!) : "N/A"}",
+                    style: GoogleFonts.inter(
                       fontSize: 14,
                       color: Colors.grey[700],
                     ),
                   ),
                   SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.star, color: Colors.yellow.shade700, size: 16),
-                      SizedBox(width: 4),
-                      Text(
-                        rating,
-                        style: GoogleFonts.hindSiliguri(
-                          fontSize: 14,
+                  Align(
+                    alignment: AlignmentGeometry.centerRight,
+                    child: ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepOrange,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 8,
+                        ),
+                      ),
+                      child: Text(
+                        "Report",
+                        style: GoogleFonts.inter(
                           fontWeight: FontWeight.w600,
+                          color: Colors.white,
                         ),
                       ),
-                      Spacer(),
-                      ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepOrange,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 8,
-                          ),
-                        ),
-                        child: Text(
-                          "Report",
-                          style: GoogleFonts.hindSiliguri(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),

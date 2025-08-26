@@ -18,11 +18,20 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var authenticated = false;
-    getToken().then((token) {
-      if (token != null) {
-        authenticated = true;
-      }
+    getToken().then((token) async {
+      authenticated = token != null;
     });
-    return MaterialApp(home: authenticated ? Indexpage() : LoginScreen());
+    return FutureBuilder(
+      future: getToken(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return MaterialApp(
+            home: snapshot.data != null ? Indexpage() : LoginScreen(),
+          );
+        } else {
+          return const CircularProgressIndicator();
+        }
+      },
+    );
   }
 }

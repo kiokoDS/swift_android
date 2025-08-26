@@ -1,6 +1,7 @@
 import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:swift/pages/login.dart';
 
 class AccountPage extends StatefulWidget {
   @override
@@ -42,7 +43,7 @@ class _ProfilepageState extends State<AccountPage> {
                         padding: EdgeInsets.only(top: 10),
                         child: Text(
                           "Simon Kioko",
-                          style: GoogleFonts.hindSiliguri(
+                          style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
                           ),
@@ -64,7 +65,7 @@ class _ProfilepageState extends State<AccountPage> {
                               padding: EdgeInsets.only(left: 5, right: 5),
                               child: Text(
                                 "5.0",
-                                style: GoogleFonts.hindSiliguri(
+                                style: GoogleFonts.inter(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -72,7 +73,7 @@ class _ProfilepageState extends State<AccountPage> {
                             ),
                             Text(
                               "rating",
-                              style: GoogleFonts.hindSiliguri(
+                              style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.grey,
@@ -88,7 +89,7 @@ class _ProfilepageState extends State<AccountPage> {
                           alignment: Alignment.centerLeft,
                           child: Text(
                             "Your details",
-                            style: GoogleFonts.hindSiliguri(
+                            style: GoogleFonts.inter(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
                             ),
@@ -108,7 +109,7 @@ class _ProfilepageState extends State<AccountPage> {
                             trailing: Icon(Icons.arrow_forward_ios, size: 15),
                             title: Text(
                               "Personal Info",
-                              style: GoogleFonts.hindSiliguri(
+                              style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -129,7 +130,7 @@ class _ProfilepageState extends State<AccountPage> {
                             trailing: Icon(Icons.arrow_forward_ios, size: 15),
                             title: Text(
                               "Safety",
-                              style: GoogleFonts.hindSiliguri(
+                              style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -150,7 +151,7 @@ class _ProfilepageState extends State<AccountPage> {
                             trailing: Icon(Icons.arrow_forward_ios, size: 15),
                             title: Text(
                               "Login & Security",
-                              style: GoogleFonts.hindSiliguri(
+                              style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -171,7 +172,7 @@ class _ProfilepageState extends State<AccountPage> {
                             trailing: Icon(Icons.arrow_forward_ios, size: 15),
                             title: Text(
                               "Privacy",
-                              style: GoogleFonts.hindSiliguri(
+                              style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -185,7 +186,7 @@ class _ProfilepageState extends State<AccountPage> {
                           alignment: Alignment.centerLeft,
                           child: Text(
                             "Saved places",
-                            style: GoogleFonts.hindSiliguri(
+                            style: GoogleFonts.inter(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
                             ),
@@ -205,7 +206,7 @@ class _ProfilepageState extends State<AccountPage> {
                             trailing: Icon(Icons.arrow_forward_ios, size: 15),
                             title: Text(
                               "Add Home Address",
-                              style: GoogleFonts.hindSiliguri(
+                              style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -226,7 +227,7 @@ class _ProfilepageState extends State<AccountPage> {
                             trailing: Icon(Icons.arrow_forward_ios, size: 15),
                             title: Text(
                               "Add Work Address",
-                              style: GoogleFonts.hindSiliguri(
+                              style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -240,7 +241,7 @@ class _ProfilepageState extends State<AccountPage> {
                           alignment: Alignment.centerLeft,
                           child: Text(
                             "Cridentials",
-                            style: GoogleFonts.hindSiliguri(
+                            style: GoogleFonts.inter(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
                             ),
@@ -255,14 +256,24 @@ class _ProfilepageState extends State<AccountPage> {
                               bottom: BorderSide(color: Colors.grey, width: 1),
                             ),
                           ),
-                          child: ListTile(
-                            leading: Icon(FeatherIcons.logOut, size: 22),
-                            trailing: Icon(Icons.arrow_forward_ios, size: 15),
-                            title: Text(
-                              "Logout",
-                              style: GoogleFonts.hindSiliguri(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => LoginScreen(),
+                                ),
+                              );
+                            },
+                            child: ListTile(
+                              leading: Icon(FeatherIcons.logOut, size: 22),
+                              trailing: Icon(Icons.arrow_forward_ios, size: 15),
+                              title: Text(
+                                "Logout",
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                ),
                               ),
                             ),
                           ),
@@ -281,7 +292,7 @@ class _ProfilepageState extends State<AccountPage> {
                             trailing: Icon(Icons.arrow_forward_ios, size: 15),
                             title: Text(
                               "Delete Account",
-                              style: GoogleFonts.hindSiliguri(
+                              style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),

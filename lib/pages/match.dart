@@ -88,7 +88,7 @@ class _MatchPageState extends State<MatchPage> {
             ),
             Text(
               "Matching you with a rider",
-              style: GoogleFonts.hindSiliguri(
+              style: GoogleFonts.inter(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
               ),

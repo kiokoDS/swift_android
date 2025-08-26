@@ -213,7 +213,7 @@ class _HomePageState extends State<HomePage> {
                       ),
 
                       AnimatedSwitcher(
-                        duration: Duration(milliseconds: 300),
+                        duration: Duration(milliseconds: 200),
                         child: sheetExtent >= 0.95
                             ? Padding(
                                 padding: EdgeInsets.only(top: 20, bottom: 6),
@@ -230,7 +230,7 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                     Text(
                                       "Lets send a package",
-                                      style: GoogleFonts.hindSiliguri(
+                                      style: GoogleFonts.inter(
                                         fontWeight: FontWeight.w800,
                                         fontSize: 20,
                                       ),
@@ -250,7 +250,7 @@ class _HomePageState extends State<HomePage> {
                                   alignment: Alignment.centerLeft,
                                   child: Text(
                                     "Lets send a package",
-                                    style: GoogleFonts.hindSiliguri(
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 20,
                                     ),
@@ -336,14 +336,14 @@ class _HomePageState extends State<HomePage> {
                                         ),
                                         Text(
                                           item["title"] as String,
-                                          style: GoogleFonts.hindSiliguri(
+                                          style: GoogleFonts.inter(
                                             fontWeight: FontWeight.w600,
                                             fontSize: 18,
                                           ),
                                         ),
                                         Text(
                                           item["subtitle"] as String,
-                                          style: GoogleFonts.hindSiliguri(
+                                          style: GoogleFonts.inter(
                                             fontSize: 13,
                                           ),
                                         ),
@@ -386,10 +386,7 @@ class _HomePageState extends State<HomePage> {
         ),
         child: TextField(
           controller: SearchController,
-          style: GoogleFonts.hindSiliguri(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
+          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
           decoration: InputDecoration(
             border: InputBorder.none,
             hintText: "Send where?",

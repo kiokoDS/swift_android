@@ -68,10 +68,7 @@ class _OrdersPageState extends State<OrdersPage> {
         backgroundColor: Colors.white,
         title: Text(
           "Orders",
-          style: GoogleFonts.hindSiliguri(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-          ),
+          style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w800),
         ),
       ),
       body: isLoading
@@ -110,7 +107,7 @@ class _OrdersPageState extends State<OrdersPage> {
                             padding: EdgeInsetsGeometry.only(left: 10),
                             child: Text(
                               "${order["orderId"] ?? "N/A"}",
-                              style: GoogleFonts.hindSiliguri(fontSize: 10),
+                              style: GoogleFonts.inter(fontSize: 10),
                             ),
                           ),
                         ],
@@ -123,7 +120,7 @@ class _OrdersPageState extends State<OrdersPage> {
                         SizedBox(height: 4),
                         Text(
                           "From: ${order["pickupAddress"] ?? "N/A"}",
-                          style: GoogleFonts.hindSiliguri(
+                          style: GoogleFonts.inter(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
@@ -131,7 +128,7 @@ class _OrdersPageState extends State<OrdersPage> {
                         SizedBox(height: 2),
                         Text(
                           "To: ${order["dropoffAddress"] ?? "N/A"}",
-                          style: GoogleFonts.hindSiliguri(
+                          style: GoogleFonts.inter(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
@@ -158,7 +155,7 @@ class _OrdersPageState extends State<OrdersPage> {
                         //     ),
                         //     child: Text(
                         //       " ${order["status"] ?? "N/A"}",
-                        //       style: GoogleFonts.hindSiliguri(
+                        //       style: GoogleFonts.inter(
                         //         fontSize: 10,
                         //         fontWeight: FontWeight.w600,
                         //         color: Colors.white,
@@ -170,7 +167,7 @@ class _OrdersPageState extends State<OrdersPage> {
                     ),
                     trailing: Text(
                       "KES: ${order["price"] ?? "N/A"}",
-                      style: GoogleFonts.hindSiliguri(
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.w900,
                         fontSize: 14,
                         color: Colors.green,

@@ -4,18 +4,20 @@ import 'package:flutter/widgets.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:new_loading_indicator/new_loading_indicator.dart';
+import 'package:phone_form_field/phone_form_field.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swift/pages/index.dart';
-import 'package:swift/pages/register.dart';
+import 'package:swift/pages/login.dart';
 
-class LoginScreen extends StatefulWidget {
+class RegisterScreen extends StatefulWidget {
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<RegisterScreen> {
   final EmailController = TextEditingController();
   final PasswordController = TextEditingController();
+  final phoneController = PhoneController();
 
   bool _isLoading = false;
 
@@ -38,20 +40,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await dio.post(
-        "http://209.126.8.100:4141/login",
+        "http://209.126.8.100:4141/register",
         data: {
           "username": EmailController.text,
           "password": PasswordController.text,
+          "phone": phoneController.value,
         },
       );
-      final token = response.data["token"]; // Already parsed JSON
-      await saveToken(token);
       setState(() {
         _isLoading = false;
       });
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => Indexpage()),
+        MaterialPageRoute(builder: (context) => LoginScreen()),
       );
     } catch (e) {
       print("Error: $e");
@@ -86,22 +87,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
-                      "Welcome back",
+                      "Lets get started",
                       style: GoogleFonts.inter(
                         fontWeight: FontWeight.w800,
                         fontSize: 25,
                       ),
                     ),
-                    Padding(
-                      padding: EdgeInsets.only(top: 20),
-                      child: Text(
-                        "log in with your swift account to get things started",
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w300,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
+
                     Padding(
                       padding: EdgeInsets.only(top: 20),
                       child: Container(
@@ -120,9 +112,33 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: EmailController,
                           style: GoogleFonts.inter(fontSize: 14),
                           decoration: InputDecoration(
-                            hintText: "Username or email",
+                            hintText: "Email",
                             border: InputBorder
                                 .none, // remove default TextField border
+                          ),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(top: 10),
+                      child: Container(
+                        height: 50,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: PhoneFormField(
+                          textAlign: TextAlign.center,
+                          controller: phoneController,
+                          style: GoogleFonts.inter(fontSize: 14),
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            hintText: "Contact phone number",
+                            //icon: Icon(FeatherIcons.phoneCall),
                           ),
                         ),
                       ),
@@ -176,35 +192,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                   strokeWidth: 2,
                                 )
                               : Text(
-                                  "Log In",
+                                  "Register",
                                   style: GoogleFonts.inter(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(top: 10),
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          child: Text(
-                            "create an account",
-                            style: GoogleFonts.inter(
-                              fontWeight: FontWeight.w700,
-                              color: Colors.deepOrangeAccent,
-                            ),
-                          ),
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => RegisterScreen(),
-                              ),
-                            );
-                          },
                         ),
                       ),
                     ),
