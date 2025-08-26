@@ -109,7 +109,8 @@ class RiderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 1,
-      color: Colors.orange[100],
+      //color: Colors.orange[100],
+      color: Colors.grey[100],
       margin: EdgeInsets.symmetric(vertical: 8),
 
       child: Padding(

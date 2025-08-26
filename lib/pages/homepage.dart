@@ -139,8 +139,8 @@ class _HomePageState extends State<HomePage> {
                   ? [
                       Polyline<Object>(
                         points: routePoints,
-                        strokeWidth: 5,
-                        color: Colors.deepOrange,
+                        strokeWidth: 6,
+                        color: Colors.blue,
                         strokeCap: StrokeCap.round,
                       ),
                     ]
@@ -235,7 +235,17 @@ class _HomePageState extends State<HomePage> {
                         ),
 
                         AnimatedSwitcher(
-                          duration: Duration(milliseconds: 200),
+                          duration: Duration(milliseconds: 300),
+                          transitionBuilder: (child, animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SizeTransition(
+                                sizeFactor: animation,
+                                axisAlignment: -1.0,
+                                child: child,
+                              ),
+                            );
+                          },
                           child: sheetExtent >= 0.95
                               ? Padding(
                                   padding: EdgeInsets.only(top: 20, bottom: 6),
@@ -260,18 +270,38 @@ class _HomePageState extends State<HomePage> {
                                     ],
                                   ),
                                 ) // show directly under title
-                              : SizedBox.shrink(),
+                              : SizedBox.shrink(key: ValueKey("empty")),
                         ),
 
                         AnimatedSwitcher(
                           duration: Duration(milliseconds: 300),
+                          transitionBuilder: (child, animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SizeTransition(
+                                sizeFactor: animation,
+                                axisAlignment: -1.0,
+                                child: child,
+                              ),
+                            );
+                          },
                           child: sheetExtent == 1.0
                               ? _buildSearchBox()
-                              : SizedBox.shrink(),
+                              : SizedBox.shrink(key: ValueKey("empty")),
                         ),
 
                         AnimatedSwitcher(
                           duration: Duration(milliseconds: 300),
+                          transitionBuilder: (child, animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SizeTransition(
+                                sizeFactor: animation,
+                                axisAlignment: -1.0,
+                                child: child,
+                              ),
+                            );
+                          },
                           child: sheetExtent < 0.95
                               ? Padding(
                                   padding: EdgeInsets.only(top: 20, bottom: 6),
@@ -287,15 +317,25 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                 )
                               // show directly under title
-                              : SizedBox.shrink(),
+                              : SizedBox.shrink(key: ValueKey("empty")),
                         ),
 
                         // ✅ search box floats up when minimized
                         AnimatedSwitcher(
                           duration: Duration(milliseconds: 300),
+                          transitionBuilder: (child, animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SizeTransition(
+                                sizeFactor: animation,
+                                axisAlignment: -1.0,
+                                child: child,
+                              ),
+                            );
+                          },
                           child: sheetExtent <= 0.35
                               ? _buildSearchBox() // show directly under title
-                              : SizedBox.shrink(),
+                              : SizedBox.shrink(key: ValueKey("empty")),
                         ),
 
                         Padding(
@@ -361,10 +401,20 @@ class _HomePageState extends State<HomePage> {
                         ),
                         // ✅ search box when expanded
                         AnimatedSwitcher(
+                          transitionBuilder: (child, animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SizeTransition(
+                                sizeFactor: animation,
+                                axisAlignment: -1.0,
+                                child: child,
+                              ),
+                            );
+                          },
                           duration: Duration(milliseconds: 300),
                           child: sheetExtent > 0.3 && sheetExtent < 0.95
                               ? _buildSearchBox()
-                              : SizedBox.shrink(),
+                              : SizedBox.shrink(key: ValueKey("empty")),
                         ),
                       ],
                     ),
