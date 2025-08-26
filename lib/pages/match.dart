@@ -43,12 +43,23 @@ class _MatchPageState extends State<MatchPage> {
       print(json.encode(response.data));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
+          action: SnackBarAction(
+            textColor: Colors.white,
+            label: "OK",
+            onPressed: () =>
+                ScaffoldMessenger.of(context).removeCurrentSnackBar(),
+          ),
           backgroundColor: Colors.green,
           content: ListTile(
             leading: Icon(Icons.check_circle, color: Colors.white),
             title: Text("Rider found"),
             subtitle: Text(
               "${response.data["licensePlate"]} will be there shortly",
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
             ),
           ),
         ),

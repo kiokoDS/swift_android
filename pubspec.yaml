@@ -32,6 +32,9 @@ dependencies:
   choice: ^2.3.2
   currency_formatter: ^2.3.0
   timeago: ^3.7.1
+  geocoding: ^4.0.0
+  flutter_typeahead: ^5.2.0
+  flutter_keyboard_visibility: ^6.0.0
 
 
 
@@ -51,6 +54,7 @@ flutter:
     - assets/images/meditate.png
     - assets/images/mpesa.png
     - assets/images/cash.png
+    - assets/images/actualmpesa.png
 
 # 👇 flutter_native_splash config goes here
 flutter_native_splash:

@@ -16,12 +16,19 @@ import 'package:swift/pages/match.dart';
 import 'package:swift/pages/payments.dart';
 
 class SendPage extends StatefulWidget {
+  final String? location;
+  final bool? throughpass;
+  final LatLng? destiny;
+  const SendPage({Key? key, this.location, this.throughpass, this.destiny})
+    : super(key: key);
+
   @override
   State<SendPage> createState() => _SendPageState();
 }
 
 class _SendPageState extends State<SendPage> {
   var location = LatLng(0, 0);
+  var destination = LatLng(0, 0);
   var loading = false;
   var token = "";
 
@@ -97,12 +104,15 @@ class _SendPageState extends State<SendPage> {
       "pickupAddress": locationController.text,
       "pickupContactName": nameController.text,
       "pickupContactPhone": phoneController.text,
-      "dropoffAddress": "Juja",
+      "dropoffAddress": destinationController.text,
       "pickupLocation": {
-        "latitude": location.latitude,
-        "longitude": location.longitude,
+        "latitude": destination.latitude,
+        "longitude": destination.longitude,
       },
-      "dropoffLocation": {"latitude": -1.2921, "longitude": 36.8219},
+      "dropoffLocation": {
+        "latitude": destination.latitude,
+        "longitude": destination.longitude,
+      },
       "droppffContactName": "jaydee",
     });
     var dio = Dio();
@@ -155,6 +165,14 @@ class _SendPageState extends State<SendPage> {
     super.initState();
     // Initialize the map controller
     getLocation();
+
+    if (widget.throughpass == true) {
+      setState(() {
+        destinationController.text = widget.location!;
+        print("-------------------");
+        destination = widget.destiny!;
+      });
+    }
   }
 
   final locationController = TextEditingController();
@@ -234,7 +252,7 @@ class _SendPageState extends State<SendPage> {
                                   strokeWidth: 2,
                                 )
                               : null,
-                          icon: Icon(Icons.location_on, color: Colors.blue),
+                          icon: Icon(Icons.location_on, color: Colors.green),
                         ),
                       ),
                     ),
@@ -319,6 +337,7 @@ class _SendPageState extends State<SendPage> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: TextField(
+                        keyboardType: TextInputType.phone,
                         controller: phoneController,
                         style: GoogleFonts.inter(fontSize: 14),
                         decoration: InputDecoration(

@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swift/pages/accountpage.dart';
 import 'package:swift/pages/homepage.dart';
 import 'package:swift/pages/orderspage.dart';
+import 'package:swift/pages/payments.dart';
+import 'package:swift/pages/promotions.dart';
 
 class Indexpage extends StatefulWidget {
   @override
@@ -45,6 +47,7 @@ class _IndexAppState extends State<Indexpage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       // appBar: AppBar(title: Text("Swift App")),
       drawer: Drawer(
         backgroundColor: Colors.white,
@@ -133,7 +136,10 @@ class _IndexAppState extends State<Indexpage> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              onTap: () => _onItemTapped(0),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => Payments()),
+              ),
             ),
             ListTile(
               leading: Icon(Icons.card_giftcard, size: 20),
@@ -144,7 +150,10 @@ class _IndexAppState extends State<Indexpage> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              onTap: () => _onItemTapped(1),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => PromoPage()),
+              ),
             ),
 
             ListTile(
@@ -196,6 +205,7 @@ class _IndexAppState extends State<Indexpage> {
       ),
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
+        selectedItemColor: Colors.deepOrange,
         backgroundColor: Colors.white,
         currentIndex: _selectedIndex,
         iconSize: 20,
