@@ -29,7 +29,9 @@ class MainApp extends StatelessWidget {
             home: snapshot.data != null ? Indexpage() : LoginScreen(),
           );
         } else {
-          return const CircularProgressIndicator();
+          return MaterialApp(
+            home: LoginScreen()
+          );
         }
       },
     );
