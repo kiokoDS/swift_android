@@ -13,6 +13,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:new_loading_indicator/new_loading_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swift/pages/receive.dart';
 import 'package:swift/pages/request.dart';
@@ -23,6 +24,10 @@ import 'package:swift/services/websocketservice.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class HomePage extends StatefulWidget {
+  final bool? tracking;
+  final bool? promptstart;
+  const HomePage({Key? key, this.tracking, this.promptstart}) : super(key: key);
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -37,6 +42,7 @@ class _HomePageState extends State<HomePage> {
   bool loading = false;
   bool activeorder = true;
   bool checkingorders = true;
+  bool tracking = false;
 
   final MapController _mapController = MapController();
 
@@ -69,7 +75,7 @@ class _HomePageState extends State<HomePage> {
     return prefs.getString("token");
   }
 
-    Future<Position> _getCurrentLocation() async {
+  Future<Position> _getCurrentLocation() async {
     // Ask for permission
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
@@ -93,33 +99,41 @@ class _HomePageState extends State<HomePage> {
       desiredAccuracy: LocationAccuracy.high,
     );
   }
-final Dio dio = Dio();
-Future<void> fetchOrders() async {
+
+  final Dio dio = Dio();
+
+  Future<void> fetchPendingOrder() async {
     var key = await getToken();
     var headers = {'Authorization': "Bearer ${key}"};
 
+    setState(() {
+      checkingorders = true;
+    });
+
     try {
       var response = await dio.request(
-        'http://209.126.8.100:4141/api/orders/all?page=0',
+        'http://209.126.8.100:4141/api/orders/pending',
         options: Options(method: 'GET', headers: headers),
       );
 
       if (response.statusCode == 200) {
+        print("Pending orders: ${response.data}");
         setState(() {
           checkingorders = false;
         });
       } else {
+        print("===============+++++++++++++++++++++++++");
         print("Error: ${response.statusMessage}");
         print("Token: $token");
         setState(() => checkingorders = false);
       }
     } catch (e) {
+      print("===============+++++++++++++++++++++++++");
       print("Exception: $e");
       print(headers);
       setState(() => checkingorders = false);
     }
   }
-
 
   void getLocation() async {
     setState(() {
@@ -132,7 +146,6 @@ Future<void> fetchOrders() async {
     setState(() {
       start = LatLng(position.latitude, position.longitude);
     });
-    
   }
 
   Future<void> fetchRoute() async {
@@ -167,9 +180,7 @@ Future<void> fetchOrders() async {
     }
   }
 
-
   Future<void> updateRoutes(startlat, startlng, endlat, endlng) async {
-
     const apiKey =
         "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjZjNGY5M2ViNzJkMTQ1ODhiZGU1MDNjNjRlMjQxOTk3IiwiaCI6Im11cm11cjY0In0="; // 🔑 put your ORS key here
     final url =
@@ -193,7 +204,6 @@ Future<void> fetchOrders() async {
             .map((c) => LatLng(c[1], c[0])) // ORS gives [lon, lat]
             .toList();
       });
-
     } else {
       print("Failed to fetch route: ${response.body}");
     }
@@ -209,6 +219,8 @@ Future<void> fetchOrders() async {
   @override
   void initState() {
     super.initState();
+
+    fetchPendingOrder();
 
     draggableController.addListener(() {
       setState(() {
@@ -265,17 +277,13 @@ Future<void> fetchOrders() async {
     // 👂 listen for backend messages
     wsService.stream.listen((message) {
       try {
-
-
         final data = jsonDecode(message);
         final orderId = data["order_id"];
         final user = data["username"];
         final lat = data["lat"];
         final lng = data["lng"];
 
-
         getLocation();
-
 
         // ✅ filter for the logged-in user + order
         if (orderId == "12345") {
@@ -284,13 +292,10 @@ Future<void> fetchOrders() async {
           setState(() {
             //routePoints.add(LatLng(lat, lng));
             end = LatLng(lat, lng);
-            
           });
 
-        
-
           updateRoutes(start.latitude, start.longitude, lat, lng);
-          
+
           _mapController.move(LatLng(lat, lng), 18.0);
 
           fetchRoute();
@@ -310,313 +315,457 @@ Future<void> fetchOrders() async {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        FlutterMap(
-          options: MapOptions(initialCenter: center, initialZoom: 18.0),
-          mapController: _mapController,
-          children: [
-            TileLayer(
-              urlTemplate:
-                  'https://api.maptiler.com/maps/dataviz/{z}/{x}/{y}.png?key=5pYqr4DbTOErEL2iL0ul',
-              userAgentPackageName: 'com.kios19.swift',
-              tileProvider: NetworkTileProvider(), // optional, explicit
+    if (checkingorders) {
+      return Container(
+        child: Center(
+          child: Container(
+            height: 50,
+            child: LoadingIndicator(
+              indicatorType: Indicator.ballPulseSync,
+              colors: const [Colors.deepOrange],
+              strokeWidth: 2,
             ),
-            // 🔵 Polyline between them
-            PolylineLayer<Object>(
-              polylines: routePoints.isNotEmpty
-                  ? [
-                      Polyline<Object>(
-                        points: routePoints,
-                        strokeWidth: 6,
-                        color: Colors.blue,
-                        strokeCap: StrokeCap.round,
-                      ),
-                    ]
-                  : [],
-            ),
+          ),
+        ),
+      );
+    } else {
+      return Stack(
+        children: [
+          FlutterMap(
+            options: MapOptions(initialCenter: center, initialZoom: 18.0),
+            mapController: _mapController,
+            children: [
+              TileLayer(
+                urlTemplate:
+                    'https://api.maptiler.com/maps/dataviz/{z}/{x}/{y}.png?key=5pYqr4DbTOErEL2iL0ul',
+                userAgentPackageName: 'com.kios19.swift',
+                tileProvider: NetworkTileProvider(), // optional, explicit
+              ),
+              // 🔵 Polyline between them
+              PolylineLayer<Object>(
+                polylines: routePoints.isNotEmpty
+                    ? [
+                        Polyline<Object>(
+                          points: routePoints,
+                          strokeWidth: 6,
+                          color: Colors.blue,
+                          strokeCap: StrokeCap.round,
+                        ),
+                      ]
+                    : [],
+              ),
 
-            MarkerLayer(
-              markers: [
-                Marker(
-                  point: start,
-                  width: 30,
-                  height: 30,
-                  child: Icon(Icons.assistant_navigation, color: Colors.black,),
-                ),
-                Marker(
-                  point: end,
-                  width: 40,
-                  height: 40,
-                  child: Image.asset(
-                    "assets/images/rider.png",
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: start,
+                    width: 30,
+                    height: 30,
+                    child: Icon(
+                      Icons.assistant_navigation,
+                      color: Colors.black,
+                    ),
+                  ),
+                  Marker(
+                    point: end,
                     width: 40,
                     height: 40,
+                    child: Image.asset(
+                      "assets/images/rider.png",
+                      width: 40,
+                      height: 40,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        Positioned(
-          top: 40,
-          left: 15,
-          child: Material(
-            color: Colors.white,
-            shape: const CircleBorder(),
-            elevation: 4,
-            child: Padding(
-              padding: const EdgeInsets.all(2),
-              child: Builder(
-                builder: (context) => IconButton(
-                  onPressed: () {
-                    Scaffold.of(context).openDrawer();
-                  },
-                  icon: const Icon(FeatherIcons.menu, size: 26),
+                ],
+              ),
+            ],
+          ),
+          Positioned(
+            top: 40,
+            left: 15,
+            child: Material(
+              color: Colors.white,
+              shape: const CircleBorder(),
+              elevation: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(2),
+                child: Builder(
+                  builder: (context) => IconButton(
+                    onPressed: () {
+                      Scaffold.of(context).openDrawer();
+                    },
+                    icon: const Icon(FeatherIcons.menu, size: 26),
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-        DraggableScrollableSheet(
-          snap: false,
-          snapSizes: [0.2, 0.8, 1.0],
-          controller: draggableController,
-          initialChildSize: 0.8,
-          minChildSize: 0.2,
-          maxChildSize: 1.0,
-          builder: (context, scrollController) {
-            return SafeArea(
-              top: false,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 8,
-                      offset: Offset(0, -2),
+          DraggableScrollableSheet(
+            snap: false,
+            snapSizes: [0.2, 0.8, 1.0],
+            controller: draggableController,
+            initialChildSize: 0.8,
+            minChildSize: 0.2,
+            maxChildSize: 1.0,
+            builder: (context, scrollController) {
+              if (widget.tracking == true && widget.promptstart == true) {
+                draggableController.animateTo(
+                  0.4, // target extent (between minChildSize and maxChildSize)
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInOut,
+                );
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(20),
                     ),
-                  ],
-                ),
-                child: Padding(
-                  padding: EdgeInsets.only(left: 20, right: 20),
-                  child: SingleChildScrollView(
-                    controller: scrollController,
-                    child: Column(
-                      children: [
-                        Center(
-                          child: Padding(
-                            padding: EdgeInsets.only(top: 10),
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 1),
-                              height: 4,
-                              width: 40,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[400],
-                                borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 8,
+                        offset: Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 20, right: 20),
+                    child: SingleChildScrollView(
+                      controller: scrollController,
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Center(
+                              child: Padding(
+                                padding: EdgeInsets.only(top: 10),
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                    vertical: 1,
+                                  ),
+                                  height: 4,
+                                  width: 40,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[400],
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-
-                        AnimatedSwitcher(
-                          duration: Duration(milliseconds: 300),
-                          transitionBuilder: (child, animation) {
-                            return FadeTransition(
-                              opacity: animation,
-                              child: SizeTransition(
-                                sizeFactor: animation,
-                                axisAlignment: -1.0,
-                                child: child,
+                            Padding(
+                              padding: EdgeInsets.only(top: 40, bottom: 20),
+                              child: Container(
+                                child: Text(
+                                  "Are you sure you want to continue?",
+                                  style: GoogleFonts.inter(
+                                    decoration: TextDecoration.none,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black,
+                                  ),
+                                ),
                               ),
-                            );
-                          },
-                          child: sheetExtent >= 0.95
-                              ? Padding(
-                                  padding: EdgeInsets.only(top: 20, bottom: 6),
-                                  child: Row(
-                                    children: [
-                                      Padding(
-                                        padding: EdgeInsets.only(right: 10),
-                                        child: IconButton(
-                                          onPressed: () {
-                                            Scaffold.of(context).openDrawer();
-                                          },
-                                          icon: Icon(Icons.menu),
-                                        ),
+                            ),
+                            Container(
+                              width: double.infinity,
+                              height: 50,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  backgroundColor: Colors.deepOrange[700],
+                                ),
+                                onPressed: () {},
+                                child: Text(
+                                  "Proceed",
+                                  style: GoogleFonts.inter(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              } else if (widget.tracking == true &&
+                  widget.promptstart == false) {
+                return SafeArea(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 8,
+                          offset: Offset(0, -2),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 20, right: 20),
+                      child: SingleChildScrollView(
+                        controller: scrollController,
+                        child: Center(child: Column(children: [Text("data")])),
+                      ),
+                    ),
+                  ),
+                );
+              } else {
+                return SafeArea(
+                  top: false,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 8,
+                          offset: Offset(0, -2),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 20, right: 20),
+                      child: SingleChildScrollView(
+                        controller: scrollController,
+                        child: Column(
+                          children: [
+                            Center(
+                              child: Padding(
+                                padding: EdgeInsets.only(top: 10),
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                    vertical: 1,
+                                  ),
+                                  height: 4,
+                                  width: 40,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[400],
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            AnimatedSwitcher(
+                              duration: Duration(milliseconds: 300),
+                              transitionBuilder: (child, animation) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: SizeTransition(
+                                    sizeFactor: animation,
+                                    axisAlignment: -1.0,
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: sheetExtent >= 0.95
+                                  ? Padding(
+                                      padding: EdgeInsets.only(
+                                        top: 20,
+                                        bottom: 6,
                                       ),
-                                      Text(
-                                        "Lets send a package",
-                                        style: GoogleFonts.inter(
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 20,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ) // show directly under title
-                              : SizedBox.shrink(key: ValueKey("empty")),
-                        ),
-
-                        AnimatedSwitcher(
-                          duration: Duration(milliseconds: 300),
-                          transitionBuilder: (child, animation) {
-                            return FadeTransition(
-                              opacity: animation,
-                              child: SizeTransition(
-                                sizeFactor: animation,
-                                axisAlignment: -1.0,
-                                child: child,
-                              ),
-                            );
-                          },
-                          child: sheetExtent == 1.0
-                              ? _buildSearchBox()
-                              : SizedBox.shrink(key: ValueKey("empty")),
-                        ),
-
-                        AnimatedSwitcher(
-                          duration: Duration(milliseconds: 300),
-                          transitionBuilder: (child, animation) {
-                            return FadeTransition(
-                              opacity: animation,
-                              child: SizeTransition(
-                                sizeFactor: animation,
-                                axisAlignment: -1.0,
-                                child: child,
-                              ),
-                            );
-                          },
-                          child: sheetExtent < 0.95
-                              ? Padding(
-                                  padding: EdgeInsets.only(top: 20, bottom: 6),
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      "Lets send a package",
-                                      style: GoogleFonts.inter(
-                                        fontWeight: FontWeight.w800,
-                                        fontSize: 20,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              // show directly under title
-                              : SizedBox.shrink(key: ValueKey("empty")),
-                        ),
-
-                        // ✅ search box floats up when minimized
-                        AnimatedSwitcher(
-                          duration: Duration(milliseconds: 300),
-                          transitionBuilder: (child, animation) {
-                            return FadeTransition(
-                              opacity: animation,
-                              child: SizeTransition(
-                                sizeFactor: animation,
-                                axisAlignment: -1.0,
-                                child: child,
-                              ),
-                            );
-                          },
-                          child: sheetExtent <= 0.35
-                              ? _buildSearchBox() // show directly under title
-                              : SizedBox.shrink(key: ValueKey("empty")),
-                        ),
-
-                        Padding(
-                          padding: EdgeInsets.only(top: 10, bottom: 20),
-                          child: Padding(
-                            padding: EdgeInsets.only(top: 20, bottom: 20),
-                            child: GridView.builder(
-                              shrinkWrap: true,
-                              physics:
-                                  const NeverScrollableScrollPhysics(), // ✅ disables nested scrolling
-                              itemCount: 4,
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    mainAxisSpacing: 16,
-                                    crossAxisSpacing: 16,
-                                    childAspectRatio: 4 / 3,
-                                  ),
-                              itemBuilder: (context, index) {
-                                final item = items[index];
-                                return GestureDetector(
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => item["page"] as Widget,
-                                    ),
-                                  ),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[200],
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Padding(
-                                      padding: EdgeInsets.only(top: 10),
-                                      child: Column(
+                                      child: Row(
                                         children: [
-                                          Image.asset(
-                                            item["asset"] as String,
-                                            width: 50,
-                                            height: 50,
-                                          ),
-                                          Text(
-                                            item["title"] as String,
-                                            style: GoogleFonts.inter(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 18,
+                                          Padding(
+                                            padding: EdgeInsets.only(right: 10),
+                                            child: IconButton(
+                                              onPressed: () {
+                                                Scaffold.of(
+                                                  context,
+                                                ).openDrawer();
+                                              },
+                                              icon: Icon(Icons.menu),
                                             ),
                                           ),
                                           Text(
-                                            item["subtitle"] as String,
+                                            "Lets send a package",
                                             style: GoogleFonts.inter(
-                                              fontSize: 13,
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 20,
                                             ),
                                           ),
                                         ],
                                       ),
-                                    ),
+                                    ) // show directly under title
+                                  : SizedBox.shrink(key: ValueKey("empty")),
+                            ),
+
+                            AnimatedSwitcher(
+                              duration: Duration(milliseconds: 300),
+                              transitionBuilder: (child, animation) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: SizeTransition(
+                                    sizeFactor: animation,
+                                    axisAlignment: -1.0,
+                                    child: child,
                                   ),
                                 );
                               },
+                              child: sheetExtent == 1.0
+                                  ? _buildSearchBox()
+                                  : SizedBox.shrink(key: ValueKey("empty")),
                             ),
-                          ),
-                        ),
-                        // ✅ search box when expanded
-                        AnimatedSwitcher(
-                          transitionBuilder: (child, animation) {
-                            return SlideTransition(
-                              position: Tween<Offset>(
-                                begin: Offset(0, 1),
-                                end: Offset(0, 0),
-                              ).animate(animation),
-                              //opacity: animation,
-                              child: SizeTransition(
-                                sizeFactor: animation,
-                                //axisAlignment: -1.0,
-                                child: child,
+
+                            AnimatedSwitcher(
+                              duration: Duration(milliseconds: 300),
+                              transitionBuilder: (child, animation) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: SizeTransition(
+                                    sizeFactor: animation,
+                                    axisAlignment: -1.0,
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: sheetExtent < 0.95
+                                  ? Padding(
+                                      padding: EdgeInsets.only(
+                                        top: 20,
+                                        bottom: 6,
+                                      ),
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          "Lets send a package",
+                                          style: GoogleFonts.inter(
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 20,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  // show directly under title
+                                  : SizedBox.shrink(key: ValueKey("empty")),
+                            ),
+
+                            // ✅ search box floats up when minimized
+                            AnimatedSwitcher(
+                              duration: Duration(milliseconds: 300),
+                              transitionBuilder: (child, animation) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: SizeTransition(
+                                    sizeFactor: animation,
+                                    axisAlignment: -1.0,
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: sheetExtent <= 0.35
+                                  ? _buildSearchBox() // show directly under title
+                                  : SizedBox.shrink(key: ValueKey("empty")),
+                            ),
+
+                            Padding(
+                              padding: EdgeInsets.only(top: 10, bottom: 20),
+                              child: Padding(
+                                padding: EdgeInsets.only(top: 20, bottom: 20),
+                                child: GridView.builder(
+                                  shrinkWrap: true,
+                                  physics:
+                                      const NeverScrollableScrollPhysics(), // ✅ disables nested scrolling
+                                  itemCount: 4,
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                        mainAxisSpacing: 16,
+                                        crossAxisSpacing: 16,
+                                        childAspectRatio: 4 / 3,
+                                      ),
+                                  itemBuilder: (context, index) {
+                                    final item = items[index];
+                                    return GestureDetector(
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              item["page"] as Widget,
+                                        ),
+                                      ),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[200],
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: Padding(
+                                          padding: EdgeInsets.only(top: 10),
+                                          child: Column(
+                                            children: [
+                                              Image.asset(
+                                                item["asset"] as String,
+                                                width: 50,
+                                                height: 50,
+                                              ),
+                                              Text(
+                                                item["title"] as String,
+                                                style: GoogleFonts.inter(
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 18,
+                                                ),
+                                              ),
+                                              Text(
+                                                item["subtitle"] as String,
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
-                            );
-                          },
-                          duration: Duration(milliseconds: 300),
-                          child: sheetExtent > 0.3 && sheetExtent < 0.95
-                              ? _buildSearchBox()
-                              : SizedBox.shrink(key: ValueKey("empty")),
+                            ),
+                            // ✅ search box when expanded
+                            AnimatedSwitcher(
+                              transitionBuilder: (child, animation) {
+                                return SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: Offset(0, 1),
+                                    end: Offset(0, 0),
+                                  ).animate(animation),
+                                  //opacity: animation,
+                                  child: SizeTransition(
+                                    sizeFactor: animation,
+                                    //axisAlignment: -1.0,
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              duration: Duration(milliseconds: 300),
+                              child: sheetExtent > 0.3 && sheetExtent < 0.95
+                                  ? _buildSearchBox()
+                                  : SizedBox.shrink(key: ValueKey("empty")),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ),
-            );
-          },
-        ),
-      ],
-    );
+                );
+              }
+            },
+          ),
+        ],
+      );
+    }
   }
 
   Widget _buildSearchBox() {

@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:choice/choice.dart';
 import 'package:dio/dio.dart';
 import 'package:feather_icons/feather_icons.dart';
@@ -12,6 +14,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:new_loading_indicator/new_loading_indicator.dart';
 import 'package:phone_form_field/phone_form_field.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:swift/pages/homepage.dart';
 import 'package:swift/pages/match.dart';
 import 'package:swift/pages/payments.dart';
 
@@ -89,6 +92,12 @@ class _SendPageState extends State<SendPage> {
     );
   }
 
+  Future<void> saveTracking() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setString("tracking", "true");
+  }
+
   Future<void> createOrder() async {
     _isLoading = true;
     var key = await getToken();
@@ -125,11 +134,21 @@ class _SendPageState extends State<SendPage> {
     if (response.statusCode == 201) {
       print(json.encode(response.data["order"]["orderId"]));
       _isLoading = false;
-      Navigator.push(
+      // Navigator.push(
+      //   context,
+      //   MaterialPageRoute(
+      //     builder: (context) =>
+      //         MatchPage(message: response.data["order"]["orderId"]),
+      //   ),
+      // );
+
+      saveTracking();
+
+      //Navigator.pop(context);
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) =>
-              MatchPage(message: response.data["order"]["orderId"]),
+          builder: (context) => HomePage(tracking: true, promptstart: true),
         ),
       );
     } else {
