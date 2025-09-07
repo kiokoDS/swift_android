@@ -35,6 +35,8 @@ dependencies:
   geocoding: ^4.0.0
   flutter_typeahead: ^5.2.0
   flutter_keyboard_visibility: ^6.0.0
+  pocketbase: ^0.23.0+1
+  web_socket_channel: ^3.0.3
 
 
 
