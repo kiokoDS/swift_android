@@ -52,6 +52,9 @@ class _HomePageState extends State<HomePage> {
   var prompting = false;
   bool driverfound = false;
 
+  bool _isDraggingPin = false;
+  LatLng? _draggedPosition;
+
   //pricing
   var fare = 0;
   var commission = 0.0;
@@ -449,7 +452,16 @@ class _HomePageState extends State<HomePage> {
       return Stack(
         children: [
           FlutterMap(
-            options: MapOptions(initialCenter: center, initialZoom: 18.0),
+            options: MapOptions(
+              initialCenter: center, 
+              initialZoom: 18.0,
+              onTap: _isDraggingPin ? (_, point) {
+                setState(() {
+                  _draggedPosition = point;
+                });
+                _getReverseGeocode(point);
+              } : null,
+            ),
             mapController: _mapController,
             children: [
               TileLayer(
@@ -495,6 +507,43 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
+              // Add draggable marker when in drag mode
+              if (_isDraggingPin && _draggedPosition != null)
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _draggedPosition!,
+                      width: 50,
+                      height: 50,
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.place,
+                            color: Colors.deepOrange,
+                            size: 40,
+                          ),
+                          Container(
+                            padding: EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 4,
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              'Drag to adjust',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
           Positioned(
@@ -742,8 +791,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
-                  ),
-                );
+                  ));
               } else if (widget.tracking == true &&
                   prompting == false &&
                   driverfound == true) {
@@ -807,12 +855,16 @@ class _HomePageState extends State<HomePage> {
                                           children: [
                                             Icon(
                                               Icons.star,
-                                              color: Colors.orangeAccent[100],
+                                              color: Colors.orangeAccent[400],
                                               size: 16,
                                             ),
                                             Text(
                                               "4.8",
-                                              style: TextStyle(fontSize: 14),
+                                              style: GoogleFonts.inter(
+                                                fontSize: 14,
+                                                //fontWeight: FontWeight.w800,
+                                                color: Colors.black,
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -915,8 +967,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
-                  ),
-                );
+                  ));
               } else {
                 return SafeArea(
                   top: false,
@@ -1157,9 +1208,7 @@ class _HomePageState extends State<HomePage> {
                           ],
                         ),
                       ),
-                    ),
-                  ),
-                );
+                    )));
               }
             },
           ),
@@ -1178,53 +1227,71 @@ class _HomePageState extends State<HomePage> {
           color: Colors.grey.shade200,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: TypeAheadField<Map<String, dynamic>>(
-          suggestionsCallback: (pattern) async {
-            if (pattern.isEmpty) return [];
-            return await _nominatimService.searchLocations(pattern);
-          },
-          itemBuilder: (context, suggestion) {
-            return ListTile(
-              title: Text(
-                suggestion["displayName"],
-                style: GoogleFonts.inter(fontSize: 14),
-              ),
-            );
-          },
-          onSelected: (suggestion) {
-            setState(() {
-              _controller.text = suggestion["displayName"];
-              selectedCoordinates =
-                  "Lat: ${suggestion["lat"]}, Lng: ${suggestion["lon"]}";
-            });
+        child: Row(
+          children: [
+            Expanded(
+              child: TypeAheadField<Map<String, dynamic>>(
+                suggestionsCallback: (pattern) async {
+                  if (pattern.isEmpty) return [];
+                  return await _nominatimService.searchLocations(pattern);
+                },
+                itemBuilder: (context, suggestion) {
+                  return Container(
+                    color: Colors.white,
+                    padding: EdgeInsets.all(13),
+                    child: Text(
+                      suggestion["displayName"],
+                      style: GoogleFonts.inter(fontSize: 14),
+                    ),
+                  );
+                },
+                onSelected: (suggestion) {
+                  setState(() {
+                    _controller.text = suggestion["displayName"];
+                    selectedCoordinates =
+                        "Lat: ${suggestion["lat"]}, Lng: ${suggestion["lon"]}";
+                  });
 
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => SendPage(
-                  location: suggestion["displayName"],
-                  throughpass: true,
-                  destiny: LatLng(
-                    double.tryParse(suggestion["lat"])!,
-                    double.tryParse(suggestion["lon"])!,
-                  ),
-                ),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SendPage(
+                        location: suggestion["displayName"],
+                        throughpass: true,
+                        destiny: LatLng(
+                          double.tryParse(suggestion["lat"])!,
+                          double.tryParse(suggestion["lon"])!,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                // 👇 instead of textFieldConfiguration
+                builder: (context, controller, focusNode) {
+                  _controller.value = controller.value; // keep sync if needed
+                  return TextField(
+                    style: GoogleFonts.inter(),
+                    controller: controller,
+                    focusNode: focusNode,
+                    decoration: InputDecoration(
+                      labelText: "Enter location",
+                      border: InputBorder.none,
+                    ),
+                  );
+                },
               ),
-            );
-          },
-          // 👇 instead of textFieldConfiguration
-          builder: (context, controller, focusNode) {
-            _controller.value = controller.value; // keep sync if needed
-            return TextField(
-              style: GoogleFonts.inter(),
-              controller: controller,
-              focusNode: focusNode,
-              decoration: InputDecoration(
-                labelText: "Enter location",
-                border: InputBorder.none,
-              ),
-            );
-          },
+            ),
+            IconButton(
+              icon: Icon(Icons.place, color: Colors.deepOrange),
+              onPressed: () {
+                setState(() {
+                  _isDraggingPin = true;
+                });
+                // Center map on current location
+                _mapController.move(start, 18);
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -1256,4 +1323,37 @@ class _HomePageState extends State<HomePage> {
       "page": Riders(),
     },
   ];
+
+  Future<void> _getReverseGeocode(LatLng point) async {
+    try {
+      final address = await _nominatimService.getAddressFromCoordinates(
+        point.latitude,
+        point.longitude,
+      );
+      
+      setState(() {
+        _controller.text = address['display_name'];
+      });
+      
+      // Optional: Navigate to send page with selected location
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SendPage(
+            location: address['display_name'],
+            throughpass: true,
+            destiny: point,
+          ),
+        ),
+      );
+      
+      // Reset drag mode
+      setState(() {
+        _isDraggingPin = false;
+        _draggedPosition = null;
+      });
+    } catch (e) {
+      print('Error getting address: $e');
+    }
+  }
 }

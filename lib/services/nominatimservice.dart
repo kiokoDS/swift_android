@@ -25,4 +25,23 @@ class NominatimService {
       throw Exception("Failed to load locations");
     }
   }
+
+  Future<Map<String, dynamic>> getAddressFromCoordinates(
+    double lat,
+    double lon,
+  ) async {
+    final url = 'https://nominatim.openstreetmap.org/reverse?format=json'
+        '&lat=$lat&lon=$lon&addressdetails=1';
+
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {'Accept-Language': 'en-US,en;q=0.9'},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to get address');
+    }
+  }
 }
