@@ -35,7 +35,7 @@ class NominatimService {
 
     final response = await http.get(
       Uri.parse(url),
-      headers: {'Accept-Language': 'en-US,en;q=0.9'},
+      headers: {'Accept-Language': 'en-US,en;q=0.9', "User-Agent": "swift"},
     );
 
     if (response.statusCode == 200) {

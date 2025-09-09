@@ -100,7 +100,7 @@ class _SendPageState extends State<SendPage> {
 
   Future<void> createOrder() async {
     _isLoading = true;
-    var key = await getToken();
+    var key = await getToken();  
 
     var headers = {
       'Accept': 'application/json',
@@ -115,8 +115,8 @@ class _SendPageState extends State<SendPage> {
       "pickupContactPhone": phoneController.text,
       "dropoffAddress": destinationController.text,
       "pickupLocation": {
-        "latitude": destination.latitude,
-        "longitude": destination.longitude,
+        "latitude": location.latitude,
+        "longitude": location.longitude,
       },
       "dropoffLocation": {
         "latitude": destination.latitude,
@@ -124,6 +124,9 @@ class _SendPageState extends State<SendPage> {
       },
       "droppffContactName": "jaydee",
     });
+
+
+
     var dio = Dio();
     var response = await dio.request(
       'http://209.126.8.100:4141/api/orders/create',
@@ -151,7 +154,7 @@ class _SendPageState extends State<SendPage> {
         context,
         MaterialPageRoute(
           builder: (context) =>
-              HomePage(tracking: true, promptstart: true, orderid: orderid),
+              HomePage(tracking: true, promptstart: true, orderid: orderid, currentLocation: location, destination: destination),
         ),
       );
     } else {
@@ -312,7 +315,7 @@ class _SendPageState extends State<SendPage> {
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         Text(
-                          "Contact details",
+                          "Receiver details",
                           style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,

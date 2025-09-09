@@ -29,8 +29,16 @@ class HomePage extends StatefulWidget {
   final bool? tracking;
   final bool? promptstart;
   final String? orderid;
-  const HomePage({Key? key, this.tracking, this.promptstart, this.orderid})
-    : super(key: key);
+  final LatLng? currentLocation;
+  final LatLng? destination;
+  const HomePage({
+    Key? key,
+    this.tracking,
+    this.promptstart,
+    this.orderid,
+    this.currentLocation,
+    this.destination,
+  }) : super(key: key);
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -259,10 +267,10 @@ class _HomePageState extends State<HomePage> {
       'Authorization': 'Bearer ${key}',
     };
     var data = json.encode({
-      "origin_lat": -1.25968,
-      "origin_lng": 36.77700,
-      "dest_lat": -1.25876,
-      "dest_lng": 36.78068,
+      "origin_lat": widget.currentLocation!.latitude,
+      "origin_lng": widget.currentLocation!.longitude,
+      "dest_lat": widget.destination!.latitude,
+      "dest_lng": widget.destination!.longitude,
       "demand_factor,omitempty": 1.0, // default 1.0
       "average_speed_kmph,omitempty": 80, // default 30
     });
@@ -340,81 +348,81 @@ class _HomePageState extends State<HomePage> {
     });
 
     getToken();
-    fetchRoute();
+    // fetchRoute();
 
-    _mapController.mapEventStream.listen((event) {
-      if (loading) {
-        setState(() {
-          loading = false;
-        });
-      }
-    });
+    // _mapController.mapEventStream.listen((event) {
+    //   if (loading) {
+    //     setState(() {
+    //       loading = false;
+    //     });
+    //   }
+    // });
 
-    var keyboardVisibility = KeyboardVisibilityController();
+    // var keyboardVisibility = KeyboardVisibilityController();
 
-    var keyboardSubscription = keyboardVisibility.onChange.listen((visible) {
-      if (visible) {
-        draggableController.animateTo(
-          1.0,
-          duration: Duration(milliseconds: 200),
-          curve: Curves.bounceIn,
-        );
-      }
-    });
+    // var keyboardSubscription = keyboardVisibility.onChange.listen((visible) {
+    //   if (visible) {
+    //     draggableController.animateTo(
+    //       1.0,
+    //       duration: Duration(milliseconds: 200),
+    //       curve: Curves.bounceIn,
+    //     );
+    //   }
+    // });
 
-    getLocation();
+    // getLocation();
 
-    // 🔌 connect to WebSocket server
-    wsService.connect("ws://192.168.100.4:8080/ws");
+    // // 🔌 connect to WebSocket server
+    // wsService.connect("ws://192.168.100.4:8080/ws");
 
-    // 🔄 start streaming GPS
-    _gpsSub =
-        Geolocator.getPositionStream(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: 1, // send update o36.8219nly if moved 5m+
-          ),
-        ).listen((Position pos) {
-          final gpsData = jsonEncode({
-            "lat": pos.latitude,
-            "lng": pos.longitude,
-            "user": username,
-            "timestamp": DateTime.now().toIso8601String(),
-          });
+    // // 🔄 start streaming GPS
+    // _gpsSub =
+    //     Geolocator.getPositionStream(
+    //       locationSettings: const LocationSettings(
+    //         accuracy: LocationAccuracy.high,
+    //         distanceFilter: 1, // send update o36.8219nly if moved 5m+
+    //       ),
+    //     ).listen((Position pos) {
+    //       final gpsData = jsonEncode({
+    //         "lat": pos.latitude,
+    //         "lng": pos.longitude,
+    //         "user": username,
+    //         "timestamp": DateTime.now().toIso8601String(),
+    //       });
 
-          wsService.send(gpsData);
-        });
+    //       wsService.send(gpsData);
+    //     });
 
-    // 👂 listen for backend messages
-    wsService.stream.listen((message) {
-      try {
-        final data = jsonDecode(message);
-        final orderId = data["order_id"];
-        final user = data["username"];
-        final lat = data["lat"];
-        final lng = data["lng"];
+    // // 👂 listen for backend messages
+    // wsService.stream.listen((message) {
+    //   try {
+    //     final data = jsonDecode(message);
+    //     final orderId = data["order_id"];
+    //     final user = data["username"];
+    //     final lat = data["lat"];
+    //     final lng = data["lng"];
 
-        getLocation();
+    //     getLocation();
 
-        // ✅ filter for the logged-in user + order
-        if (orderId == "12345") {
-          print("📩 Update for me: $lat,$lng");
-          // e.g. add a marker to the map
-          setState(() {
-            //routePoints.add(LatLng(lat, lng));
-            end = LatLng(lat, lng);
-          });
+    //     // ✅ filter for the logged-in user + order
+    //     if (orderId == "12345") {
+    //       print("📩 Update for me: $lat,$lng");
+    //       // e.g. add a marker to the map
+    //       setState(() {
+    //         //routePoints.add(LatLng(lat, lng));
+    //         end = LatLng(lat, lng);
+    //       });
 
-          updateRoutes(start.latitude, start.longitude, lat, lng);
+    //       updateRoutes(start.latitude, start.longitude, lat, lng);
 
-          _mapController.move(LatLng(lat, lng), 18.0);
+    //       _mapController.move(LatLng(lat, lng), 18.0);
 
-          fetchRoute();
-        }
-      } catch (e) {
-        print("Invalid WS message: $e");
-      }
-    });
+    //       fetchRoute();
+    //     }
+    //   } catch (e) {
+    //     print("Invalid WS message: $e");
+    //   }
+    // });
 
     if (widget.tracking == true && widget.promptstart == true) {
       setState(() {
@@ -453,14 +461,16 @@ class _HomePageState extends State<HomePage> {
         children: [
           FlutterMap(
             options: MapOptions(
-              initialCenter: center, 
+              initialCenter: center,
               initialZoom: 18.0,
-              onTap: _isDraggingPin ? (_, point) {
-                setState(() {
-                  _draggedPosition = point;
-                });
-                _getReverseGeocode(point);
-              } : null,
+              onTap: _isDraggingPin
+                  ? (_, point) {
+                      setState(() {
+                        _draggedPosition = point;
+                      });
+                      _getReverseGeocode(point);
+                    }
+                  : null,
             ),
             mapController: _mapController,
             children: [
@@ -517,21 +527,14 @@ class _HomePageState extends State<HomePage> {
                       height: 50,
                       child: Column(
                         children: [
-                          Icon(
-                            Icons.place,
-                            color: Colors.deepOrange,
-                            size: 40,
-                          ),
+                          Icon(Icons.place, color: Colors.deepOrange, size: 40),
                           Container(
                             padding: EdgeInsets.all(4),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(4),
                               boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 4,
-                                ),
+                                BoxShadow(color: Colors.black26, blurRadius: 4),
                               ],
                             ),
                             child: Text(
@@ -777,6 +780,83 @@ class _HomePageState extends State<HomePage> {
                                   //   prompting = false;
                                   // });
                                   match();
+
+                                      fetchRoute();
+
+    _mapController.mapEventStream.listen((event) {
+      if (loading) {
+        setState(() {
+          loading = false;
+        });
+      }
+    });
+
+    var keyboardVisibility = KeyboardVisibilityController();
+
+    var keyboardSubscription = keyboardVisibility.onChange.listen((visible) {
+      if (visible) {
+        draggableController.animateTo(
+          1.0,
+          duration: Duration(milliseconds: 200),
+          curve: Curves.bounceIn,
+        );
+      }
+    });
+
+    getLocation();
+
+    // 🔌 connect to WebSocket server
+    wsService.connect("ws://192.168.100.4:8080/ws");
+
+    // 🔄 start streaming GPS
+    _gpsSub =
+        Geolocator.getPositionStream(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            distanceFilter: 1, // send update o36.8219nly if moved 5m+
+          ),
+        ).listen((Position pos) {
+          final gpsData = jsonEncode({
+            "lat": pos.latitude,
+            "lng": pos.longitude,
+            "user": username,
+            "timestamp": DateTime.now().toIso8601String(),
+          });
+
+          wsService.send(gpsData);
+        });
+
+    // 👂 listen for backend messages
+    wsService.stream.listen((message) {
+      try {
+        final data = jsonDecode(message);
+        final orderId = data["order_id"];
+        final user = data["username"];
+        final lat = data["lat"];
+        final lng = data["lng"];
+
+        getLocation();
+
+        // ✅ filter for the logged-in user + order
+        if (orderId == "12345") {
+          print("📩 Update for me: $lat,$lng");
+          // e.g. add a marker to the map
+          setState(() {
+            //routePoints.add(LatLng(lat, lng));
+            end = LatLng(lat, lng);
+          });
+
+          updateRoutes(start.latitude, start.longitude, lat, lng);
+
+          _mapController.move(LatLng(lat, lng), 18.0);
+
+          fetchRoute();
+        }
+      } catch (e) {
+        print("Invalid WS message: $e");
+      }
+    });
+
                                 },
                                 child: Text(
                                   "Proceed",
@@ -791,7 +871,8 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
-                  ));
+                  ),
+                );
               } else if (widget.tracking == true &&
                   prompting == false &&
                   driverfound == true) {
@@ -967,7 +1048,8 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     ),
-                  ));
+                  ),
+                );
               } else {
                 return SafeArea(
                   top: false,
@@ -1208,7 +1290,9 @@ class _HomePageState extends State<HomePage> {
                           ],
                         ),
                       ),
-                    )));
+                    ),
+                  ),
+                );
               }
             },
           ),
@@ -1311,9 +1395,9 @@ class _HomePageState extends State<HomePage> {
       "page": Receivepage(),
     },
     {
-      "title": "Request",
-      "subtitle": "special request",
-      "asset": "assets/images/request.png",
+      "title": "Schedule",
+      "subtitle": "deliver later",
+      "asset": "assets/images/hglass.png",
       "page": Requestpage(),
     },
     {
@@ -1330,11 +1414,11 @@ class _HomePageState extends State<HomePage> {
         point.latitude,
         point.longitude,
       );
-      
+
       setState(() {
         _controller.text = address['display_name'];
       });
-      
+
       // Optional: Navigate to send page with selected location
       Navigator.push(
         context,
@@ -1346,7 +1430,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       );
-      
+
       // Reset drag mode
       setState(() {
         _isDraggingPin = false;
