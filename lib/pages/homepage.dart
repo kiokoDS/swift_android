@@ -230,7 +230,7 @@ class _HomePageState extends State<HomePage> {
     const apiKey =
         "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjZjNGY5M2ViNzJkMTQ1ODhiZGU1MDNjNjRlMjQxOTk3IiwiaCI6Im11cm11cjY0In0="; // 🔑 put your ORS key here
     final url =
-        "https://api.openrouteservice.org/v2/directions/driving-car?api_key=$apiKey&start=${start.longitude},${start.latitude}&end=${end.longitude},${end.latitude}";
+        "https://api.openrouteservice.org/v2/directions/driving-car?api_key=$apiKey&start=${widget.currentLocation!.longitude},${widget.currentLocation!.latitude}&end=${widget.destination!.longitude},${widget.destination!.latitude}";
 
     final response = await http.get(Uri.parse(url));
 
@@ -245,6 +245,13 @@ class _HomePageState extends State<HomePage> {
             .toList();
       });
       setState(() {
+        end = widget.destination!;
+        start = widget.currentLocation!;
+      });
+
+      _mapController.move(widget.currentLocation!, 18.0);
+
+      setState(() {
         loading = true;
       });
     } else {
@@ -252,6 +259,8 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         loading = true;
       });
+
+      
     }
   }
 
