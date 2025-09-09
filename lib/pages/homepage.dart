@@ -11,10 +11,12 @@ import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:new_loading_indicator/new_loading_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:swift/pages/receive.dart';
 import 'package:swift/pages/request.dart';
 import 'package:swift/pages/riders.dart';
@@ -26,7 +28,9 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 class HomePage extends StatefulWidget {
   final bool? tracking;
   final bool? promptstart;
-  const HomePage({Key? key, this.tracking, this.promptstart}) : super(key: key);
+  final String? orderid;
+  const HomePage({Key? key, this.tracking, this.promptstart, this.orderid})
+    : super(key: key);
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -43,12 +47,26 @@ class _HomePageState extends State<HomePage> {
   bool activeorder = true;
   bool checkingorders = true;
   bool tracking = false;
+  bool fareloading = false;
+  bool calculatedfare = false;
+  var prompting = false;
+  bool driverfound = false;
+
+  //pricing
+  var fare = 0;
+  var commission = 0.0;
+  var base_fare = 0;
+  var distance_km = 0;
 
   final MapController _mapController = MapController();
 
   var username = "";
   var token = "";
   var userid = "";
+
+  var driverphone = "";
+  var drivername = "";
+  var licenseplate = "";
 
   final NominatimService _nominatimService = NominatimService();
   String? selectedCoordinates;
@@ -135,6 +153,52 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> match() async {
+    setState(() {
+      fareloading = true;
+    });
+    var key = await getToken();
+    var headers = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': 'Bearer ${key}',
+    };
+    var data = {'orderId': widget.orderid};
+    var dio = Dio();
+    var response = await dio.request(
+      'http://209.126.8.100:4141/api/orders/match-driver',
+      options: Options(method: 'POST', headers: headers),
+      data: data,
+    );
+
+    if (response.statusCode == 200) {
+      print(json.encode(response.data));
+      setState(() {
+        driverphone = response.data["userPhone"];
+        drivername = response.data["userName"];
+        licenseplate = response.data["licensePlate"];
+        driverfound = true;
+        prompting = false;
+      });
+
+      setState(() {
+        fareloading = false;
+      });
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        draggableController.animateTo(
+          0.4,
+          duration: Duration(milliseconds: 200),
+          curve: Curves.bounceIn,
+        );
+      });
+    } else {
+      print(response.statusMessage);
+      setState(() {
+        fareloading = false;
+      });
+    }
+  }
+
   void getLocation() async {
     setState(() {
       loading = true;
@@ -176,6 +240,50 @@ class _HomePageState extends State<HomePage> {
       print("Failed to fetch route: ${response.body}");
       setState(() {
         loading = true;
+      });
+    }
+  }
+
+  Future<void> calculateFare() async {
+    setState(() {
+      fareloading = true;
+    });
+    var key = await getToken();
+
+    var headers = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ${key}',
+    };
+    var data = json.encode({
+      "origin_lat": -1.25968,
+      "origin_lng": 36.77700,
+      "dest_lat": -1.25876,
+      "dest_lng": 36.78068,
+      "demand_factor,omitempty": 1.0, // default 1.0
+      "average_speed_kmph,omitempty": 80, // default 30
+    });
+    var dio = Dio();
+    var response = await dio.request(
+      'http://209.126.8.100:4141/api/fare/calculate',
+      options: Options(method: 'POST', headers: headers),
+      data: data,
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        fare = response.data["total_after_min"].toInt();
+        commission = response.data["platform_commission"];
+        base_fare = response.data["base_fare"].toInt();
+        calculatedfare = true;
+        fareloading = false;
+      });
+    } else {
+      print(response.statusMessage);
+
+      setState(() {
+        calculatedfare = true;
+        fareloading = false;
       });
     }
   }
@@ -304,6 +412,15 @@ class _HomePageState extends State<HomePage> {
         print("Invalid WS message: $e");
       }
     });
+
+    if (widget.tracking == true && widget.promptstart == true) {
+      setState(() {
+        prompting = true;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        calculateFare();
+      });
+    }
   }
 
   @override
@@ -408,12 +525,7 @@ class _HomePageState extends State<HomePage> {
             minChildSize: 0.2,
             maxChildSize: 1.0,
             builder: (context, scrollController) {
-              if (widget.tracking == true && widget.promptstart == true) {
-                draggableController.animateTo(
-                  0.4, // target extent (between minChildSize and maxChildSize)
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeInOut,
-                );
+              if (widget.tracking == true && prompting == true) {
                 return Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -453,16 +565,152 @@ class _HomePageState extends State<HomePage> {
                             ),
                             Padding(
                               padding: EdgeInsets.only(top: 40, bottom: 20),
-                              child: Container(
+                              child: Align(
+                                alignment: Alignment.centerLeft,
                                 child: Text(
                                   "Are you sure you want to continue?",
                                   style: GoogleFonts.inter(
                                     decoration: TextDecoration.none,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
+                                    fontSize: 19,
+                                    fontWeight: FontWeight.w800,
                                     color: Colors.black,
                                   ),
                                 ),
+                              ),
+                            ),
+
+                            Padding(
+                              padding: EdgeInsets.only(top: 20, bottom: 10),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Skeletonizer(
+                                    enabled: fareloading,
+                                    child: Text(
+                                      "Distance: ",
+                                      style: GoogleFonts.inter(
+                                        decoration: TextDecoration.none,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                  Skeletonizer(
+                                    enabled: fareloading,
+                                    child: Text(
+                                      distance_km.toString() + " km",
+                                      style: GoogleFonts.inter(
+                                        decoration: TextDecoration.none,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.only(top: 0, bottom: 10),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Skeletonizer(
+                                    enabled: fareloading,
+                                    child: Text(
+                                      "Commission : ",
+                                      style: GoogleFonts.inter(
+                                        decoration: TextDecoration.none,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                  Skeletonizer(
+                                    enabled: fareloading,
+                                    child: Text(
+                                      NumberFormat().format(commission) +
+                                          " kes ",
+                                      style: GoogleFonts.inter(
+                                        decoration: TextDecoration.none,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.only(top: 0, bottom: 10),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Skeletonizer(
+                                    enabled: fareloading,
+                                    child: Text(
+                                      "Base rate: ",
+                                      style: GoogleFonts.inter(
+                                        decoration: TextDecoration.none,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                  Skeletonizer(
+                                    enabled: fareloading,
+                                    child: Text(
+                                      NumberFormat().format(base_fare) +
+                                          " kes ",
+                                      style: GoogleFonts.inter(
+                                        decoration: TextDecoration.none,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.only(top: 0, bottom: 10),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Skeletonizer(
+                                    enabled: fareloading,
+                                    child: Text(
+                                      "Fare: ",
+                                      style: GoogleFonts.inter(
+                                        decoration: TextDecoration.none,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                  Skeletonizer(
+                                    enabled: fareloading,
+                                    child: Text(
+                                      NumberFormat().format(fare) + " kes ",
+                                      style: GoogleFonts.inter(
+                                        decoration: TextDecoration.none,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             Container(
@@ -475,7 +723,12 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                   backgroundColor: Colors.deepOrange[700],
                                 ),
-                                onPressed: () {},
+                                onPressed: () {
+                                  // setState(() {
+                                  //   prompting = false;
+                                  // });
+                                  match();
+                                },
                                 child: Text(
                                   "Proceed",
                                   style: GoogleFonts.inter(
@@ -492,27 +745,174 @@ class _HomePageState extends State<HomePage> {
                   ),
                 );
               } else if (widget.tracking == true &&
-                  widget.promptstart == false) {
-                return SafeArea(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(20),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 8,
-                          offset: Offset(0, -2),
-                        ),
-                      ],
+                  prompting == false &&
+                  driverfound == true) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(20),
                     ),
-                    child: Padding(
-                      padding: EdgeInsets.only(left: 20, right: 20),
-                      child: SingleChildScrollView(
-                        controller: scrollController,
-                        child: Center(child: Column(children: [Text("data")])),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 8,
+                        offset: Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 20, right: 20),
+                    child: SingleChildScrollView(
+                      controller: scrollController,
+                      child: Padding(
+                        padding: EdgeInsets.only(top: 40),
+                        child: Card(
+                          color: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Top Row: Driver info
+                                Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 24,
+                                      backgroundColor: Colors.grey[300],
+                                      child: Icon(
+                                        Icons.person,
+                                        size: 30,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          drivername,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.star,
+                                              color: Colors.orangeAccent[100],
+                                              size: 16,
+                                            ),
+                                            Text(
+                                              "4.8",
+                                              style: TextStyle(fontSize: 14),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    Spacer(),
+                                    Text(
+                                      licenseplate,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 16),
+
+                                // Status row
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.directions_bike,
+                                      color: Colors.green,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        "Rider is on the way...",
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 16),
+
+                                // Action buttons
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        onPressed: () => {},
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
+                                        icon: Icon(
+                                          Icons.call,
+                                          color: Colors.white,
+                                        ),
+                                        label: Text(
+                                          "Call",
+                                          style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        onPressed: () => {},
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.blue,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                        ),
+                                        icon: Icon(
+                                          Icons.message,
+                                          color: Colors.white,
+                                        ),
+                                        label: Text(
+                                          "Message",
+                                          style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),

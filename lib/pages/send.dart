@@ -144,11 +144,14 @@ class _SendPageState extends State<SendPage> {
 
       saveTracking();
 
+      var orderid = response.data["order"]["orderId"];
+
       //Navigator.pop(context);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => HomePage(tracking: true, promptstart: true),
+          builder: (context) =>
+              HomePage(tracking: true, promptstart: true, orderid: orderid),
         ),
       );
     } else {

@@ -37,6 +37,9 @@ dependencies:
   flutter_keyboard_visibility: ^6.0.0
   pocketbase: ^0.23.0+1
   web_socket_channel: ^3.0.3
+  price_text: ^0.0.5
+  intl: ^0.20.2
+  skeletonizer: ^2.1.0+1
 
 
 
@@ -57,6 +60,7 @@ flutter:
     - assets/images/mpesa.png
     - assets/images/cash.png
     - assets/images/actualmpesa.png
+    - assets/images/bike.png
 
 # 👇 flutter_native_splash config goes here
 flutter_native_splash:
