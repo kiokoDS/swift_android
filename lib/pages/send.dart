@@ -499,7 +499,7 @@ class _SendPageState extends State<SendPage> {
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(28),
                           ),
                           backgroundColor: Colors.orange[700],
                         ),

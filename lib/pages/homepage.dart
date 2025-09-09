@@ -286,6 +286,7 @@ class _HomePageState extends State<HomePage> {
         fare = response.data["total_after_min"].toInt();
         commission = response.data["platform_commission"];
         base_fare = response.data["base_fare"].toInt();
+        distance_km = response.data["distance_km"].toInt();
         calculatedfare = true;
         fareloading = false;
       });
@@ -428,8 +429,14 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         prompting = true;
       });
+      calculateFare();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        calculateFare();
+        
+        draggableController.animateTo(
+          0.4,
+          duration: Duration(milliseconds: 200),
+          curve: Curves.bounceIn,
+        );
       });
     }
   }
@@ -578,301 +585,186 @@ class _HomePageState extends State<HomePage> {
             maxChildSize: 1.0,
             builder: (context, scrollController) {
               if (widget.tracking == true && prompting == true) {
-                return Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(20),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 8,
-                        offset: Offset(0, -2),
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.only(left: 20, right: 20),
-                    child: SingleChildScrollView(
-                      controller: scrollController,
-                      child: Center(
-                        child: Column(
-                          children: [
-                            Center(
-                              child: Padding(
-                                padding: EdgeInsets.only(top: 10),
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(
-                                    vertical: 1,
-                                  ),
-                                  height: 4,
-                                  width: 40,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[400],
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.only(top: 40, bottom: 20),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  "Are you sure you want to continue?",
-                                  style: GoogleFonts.inter(
-                                    decoration: TextDecoration.none,
-                                    fontSize: 19,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            Padding(
-                              padding: EdgeInsets.only(top: 20, bottom: 10),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Skeletonizer(
-                                    enabled: fareloading,
-                                    child: Text(
-                                      "Distance: ",
-                                      style: GoogleFonts.inter(
-                                        decoration: TextDecoration.none,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                  ),
-                                  Skeletonizer(
-                                    enabled: fareloading,
-                                    child: Text(
-                                      distance_km.toString() + " km",
-                                      style: GoogleFonts.inter(
-                                        decoration: TextDecoration.none,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.only(top: 0, bottom: 10),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Skeletonizer(
-                                    enabled: fareloading,
-                                    child: Text(
-                                      "Commission : ",
-                                      style: GoogleFonts.inter(
-                                        decoration: TextDecoration.none,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                  ),
-                                  Skeletonizer(
-                                    enabled: fareloading,
-                                    child: Text(
-                                      NumberFormat().format(commission) +
-                                          " kes ",
-                                      style: GoogleFonts.inter(
-                                        decoration: TextDecoration.none,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.only(top: 0, bottom: 10),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Skeletonizer(
-                                    enabled: fareloading,
-                                    child: Text(
-                                      "Base rate: ",
-                                      style: GoogleFonts.inter(
-                                        decoration: TextDecoration.none,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                  ),
-                                  Skeletonizer(
-                                    enabled: fareloading,
-                                    child: Text(
-                                      NumberFormat().format(base_fare) +
-                                          " kes ",
-                                      style: GoogleFonts.inter(
-                                        decoration: TextDecoration.none,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Padding(
-                              padding: EdgeInsets.only(top: 0, bottom: 10),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Skeletonizer(
-                                    enabled: fareloading,
-                                    child: Text(
-                                      "Fare: ",
-                                      style: GoogleFonts.inter(
-                                        decoration: TextDecoration.none,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                  ),
-                                  Skeletonizer(
-                                    enabled: fareloading,
-                                    child: Text(
-                                      NumberFormat().format(fare) + " kes ",
-                                      style: GoogleFonts.inter(
-                                        decoration: TextDecoration.none,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              width: double.infinity,
-                              height: 50,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  backgroundColor: Colors.deepOrange[700],
-                                ),
-                                onPressed: () {
-                                  // setState(() {
-                                  //   prompting = false;
-                                  // });
-                                  match();
-
-                                      fetchRoute();
-
-    _mapController.mapEventStream.listen((event) {
-      if (loading) {
-        setState(() {
-          loading = false;
-        });
-      }
-    });
-
-    var keyboardVisibility = KeyboardVisibilityController();
-
-    var keyboardSubscription = keyboardVisibility.onChange.listen((visible) {
-      if (visible) {
-        draggableController.animateTo(
-          1.0,
-          duration: Duration(milliseconds: 200),
-          curve: Curves.bounceIn,
-        );
-      }
-    });
-
-    getLocation();
-
-    // 🔌 connect to WebSocket server
-    wsService.connect("ws://192.168.100.4:8080/ws");
-
-    // 🔄 start streaming GPS
-    _gpsSub =
-        Geolocator.getPositionStream(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: 1, // send update o36.8219nly if moved 5m+
+        return Container(
+  decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: const BorderRadius.vertical(
+      top: Radius.circular(20),
+    ),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.08),
+        blurRadius: 12,
+        offset: const Offset(0, -4),
+      ),
+    ],
+  ),
+  child: Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+    child: SingleChildScrollView(
+      controller: scrollController,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // --- Drag Handle
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 24),
+              height: 5,
+              width: 50,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
           ),
-        ).listen((Position pos) {
-          final gpsData = jsonEncode({
-            "lat": pos.latitude,
-            "lng": pos.longitude,
-            "user": username,
-            "timestamp": DateTime.now().toIso8601String(),
-          });
 
-          wsService.send(gpsData);
-        });
+          // --- Title
+          Text(
+            "Are you sure you want to continue?",
+            style: GoogleFonts.inter(
+              decoration: TextDecoration.none,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: Colors.black,
+            ),
+          ),
 
-    // 👂 listen for backend messages
-    wsService.stream.listen((message) {
-      try {
-        final data = jsonDecode(message);
-        final orderId = data["order_id"];
-        final user = data["username"];
-        final lat = data["lat"];
-        final lng = data["lng"];
+          const SizedBox(height: 24),
 
-        getLocation();
+          // --- Fare Breakdown
+          _buildFareRow(
+            "Distance",
+            "${distance_km.toString()} Km",
+            fareloading,
+          ),
+          _buildFareRow(
+            "Commission",
+            "${NumberFormat().format(commission)} Ksh",
+            fareloading,
+          ),
+          _buildFareRow(
+            "Base Rate",
+            "${NumberFormat().format(base_fare)} Ksh",
+            fareloading,
+          ),
+          _buildFareRow(
+            "Fare",
+            "${NumberFormat().format(fare)} Ksh",
+            fareloading,
+            highlight: true,
+          ),
 
-        // ✅ filter for the logged-in user + order
-        if (orderId == "12345") {
-          print("📩 Update for me: $lat,$lng");
-          // e.g. add a marker to the map
-          setState(() {
-            //routePoints.add(LatLng(lat, lng));
-            end = LatLng(lat, lng);
-          });
+          const SizedBox(height: 32),
 
-          updateRoutes(start.latitude, start.longitude, lat, lng);
+          // --- Proceed Button
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                backgroundColor: Colors.deepOrange[700],
+              ),
+              onPressed: () {
+                match();
+                fetchRoute();
 
-          _mapController.move(LatLng(lat, lng), 18.0);
+                _mapController.mapEventStream.listen((event) {
+                  if (loading) {
+                    setState(() => loading = false);
+                  }
+                });
 
-          fetchRoute();
-        }
-      } catch (e) {
-        print("Invalid WS message: $e");
-      }
-    });
+                var keyboardVisibility = KeyboardVisibilityController();
+                var keyboardSubscription =
+                    keyboardVisibility.onChange.listen((visible) {
+                  if (visible) {
+                    draggableController.animateTo(
+                      1.0,
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOut,
+                    );
+                  }
+                });
 
-                                },
-                                child: Text(
-                                  "Proceed",
-                                  style: GoogleFonts.inter(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                getLocation();
+
+                // 🔌 connect to WebSocket server
+                wsService.connect("ws://192.168.100.4:8080/ws");
+
+                // 🔄 start streaming GPS
+                _gpsSub = Geolocator.getPositionStream(
+                  locationSettings: const LocationSettings(
+                    accuracy: LocationAccuracy.high,
+                    distanceFilter: 1,
                   ),
-                );
+                ).listen((Position pos) {
+                  final gpsData = jsonEncode({
+                    "lat": pos.latitude,
+                    "lng": pos.longitude,
+                    "user": username,
+                    "timestamp": DateTime.now().toIso8601String(),
+                  });
+                  wsService.send(gpsData);
+                });
+
+                // 👂 listen for backend messages
+                wsService.stream.listen((message) {
+                  try {
+                    final data = jsonDecode(message);
+                    final orderId = data["order_id"];
+                    final lat = data["lat"];
+                    final lng = data["lng"];
+
+                    getLocation();
+
+                    if (orderId == "12345") {
+                      setState(() {
+                        end = LatLng(lat, lng);
+                      });
+
+                      updateRoutes(
+                        start.latitude,
+                        start.longitude,
+                        lat,
+                        lng,
+                      );
+
+                      _mapController.move(
+                        LatLng(lat, lng),
+                        18.0,
+                      );
+
+                      fetchRoute();
+                    }
+                  } catch (e) {
+                    print("Invalid WS message: $e");
+                  }
+                });
+              },
+              child: Text(
+                "Proceed",
+                style: GoogleFonts.inter(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  ),
+);
+
+// --- helper widget
+
+
               } else if (widget.tracking == true &&
                   prompting == false &&
                   driverfound == true) {
@@ -913,11 +805,11 @@ class _HomePageState extends State<HomePage> {
                                     CircleAvatar(
                                       radius: 24,
                                       backgroundColor: Colors.grey[300],
-                                      child: Icon(
-                                        Icons.person,
-                                        size: 30,
-                                        color: Colors.black54,
-                                      ),
+                                      child: Image.asset(
+                                                "assets/images/driver.png",
+                                                width: 50,
+                                                height: 50,
+                                              ),
                                     ),
                                     SizedBox(width: 12),
                                     Column(
@@ -996,7 +888,7 @@ class _HomePageState extends State<HomePage> {
                                           backgroundColor: Colors.green,
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(
-                                              12,
+                                              28,
                                             ),
                                           ),
                                         ),
@@ -1022,7 +914,7 @@ class _HomePageState extends State<HomePage> {
                                           backgroundColor: Colors.blue,
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(
-                                              12,
+                                              28,
                                             ),
                                           ),
                                         ),
@@ -1440,4 +1332,40 @@ class _HomePageState extends State<HomePage> {
       print('Error getting address: $e');
     }
   }
+}
+Widget _buildFareRow(String label, String value, bool loading,
+    {bool highlight = false}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Skeletonizer(
+          enabled: loading,
+          child: Text(
+            "$label:",
+            style: GoogleFonts.inter(
+              decoration: TextDecoration.none,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.black,
+            ),
+          ),
+        ),
+        Skeletonizer(
+          enabled: loading,
+          child: Text(
+            value,
+            style: GoogleFonts.inter(
+              decoration: TextDecoration.none,
+              fontSize: 16,
+              fontWeight:
+                  highlight ? FontWeight.w800 : FontWeight.w700,
+              color: highlight ? Colors.black : Colors.grey[600],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }

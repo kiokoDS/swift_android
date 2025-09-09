@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 class NominatimService {
   Future<List<Map<String, dynamic>>> searchLocations(String query) async {
     final url = Uri.parse(
-      'https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=5',
+      'https://nominatim.openstreetmap.org/search?q=$query&format=json&limit=5&countrycodes=ke',
     );
 
     final response = await http.get(
@@ -31,7 +31,7 @@ class NominatimService {
     double lon,
   ) async {
     final url = 'https://nominatim.openstreetmap.org/reverse?format=json'
-        '&lat=$lat&lon=$lon&addressdetails=1';
+        '&lat=$lat&lon=$lon&addressdetails=1&countrycodes=ke';
 
     final response = await http.get(
       Uri.parse(url),
