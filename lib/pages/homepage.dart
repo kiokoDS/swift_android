@@ -1265,6 +1265,13 @@ class _HomePageState extends State<HomePage> {
                 });
                 // Center map on current location
                 _mapController.move(start, 18);
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+        draggableController.animateTo(
+          0.2,
+          duration: Duration(milliseconds: 200),
+          curve: Curves.bounceIn,
+        );
+      });
               },
             ),
           ],
