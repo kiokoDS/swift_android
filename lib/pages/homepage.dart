@@ -330,7 +330,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   final channel = WebSocketChannel.connect(
-    Uri.parse('ws://192.168.100.4:8080/ws'), // 👈 your Go WS server
+    Uri.parse('ws://209.126.8.100.4:8080/ws'), // 👈 your Go WS server
   );
 
   final wsService = WebSocketService();
@@ -694,7 +694,7 @@ class _HomePageState extends State<HomePage> {
                 getLocation();
 
                 // 🔌 connect to WebSocket server
-                wsService.connect("ws://192.168.100.4:8080/ws");
+                wsService.connect("ws://209.126.8.100:8080/ws");
 
                 // 🔄 start streaming GPS
                 _gpsSub = Geolocator.getPositionStream(
