@@ -61,7 +61,7 @@ flutter:
     - assets/images/cash.png
     - assets/images/actualmpesa.png
     - assets/images/bike.png
-    - assets/images/hglass.png
+    - assets/images/mail.png
 
 # 👇 flutter_native_splash config goes here
 flutter_native_splash:

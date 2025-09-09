@@ -1397,7 +1397,7 @@ class _HomePageState extends State<HomePage> {
     {
       "title": "Schedule",
       "subtitle": "deliver later",
-      "asset": "assets/images/hglass.png",
+      "asset": "assets/images/mail.png",
       "page": Requestpage(),
     },
     {
