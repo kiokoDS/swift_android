@@ -197,7 +197,7 @@ class _HomePageState extends State<HomePage> {
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         draggableController.animateTo(
-          0.4,
+          0.3,
           duration: Duration(milliseconds: 200),
           curve: Curves.bounceIn,
         );
@@ -259,8 +259,6 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         loading = true;
       });
-
-      
     }
   }
 
@@ -333,13 +331,16 @@ class _HomePageState extends State<HomePage> {
             .map((c) => LatLng(c[1], c[0])) // ORS gives [lon, lat]
             .toList();
       });
+      setState(() {
+        end = LatLng(endlat, endlng);
+      });
     } else {
       print("Failed to fetch route: ${response.body}");
     }
   }
 
   final channel = WebSocketChannel.connect(
-    Uri.parse('ws://209.126.8.100.4:8080/ws'), // 👈 your Go WS server
+    Uri.parse('ws://209.126.8.100:8080/ws'), // 👈 your Go WS server
   );
 
   final wsService = WebSocketService();
@@ -440,7 +441,6 @@ class _HomePageState extends State<HomePage> {
       });
       calculateFare();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        
         draggableController.animateTo(
           0.4,
           duration: Duration(milliseconds: 200),
@@ -495,6 +495,10 @@ class _HomePageState extends State<HomePage> {
                     'https://api.maptiler.com/maps/dataviz/{z}/{x}/{y}.png?key=5pYqr4DbTOErEL2iL0ul',
                 userAgentPackageName: 'com.kios19.swift',
                 tileProvider: NetworkTileProvider(), // optional, explicit
+                tileSize: 256,
+                keepBuffer: 2,
+                maxZoom: 20,
+                minZoom: 10,
               ),
               // 🔵 Polyline between them
               PolylineLayer<Object>(
@@ -594,186 +598,193 @@ class _HomePageState extends State<HomePage> {
             maxChildSize: 1.0,
             builder: (context, scrollController) {
               if (widget.tracking == true && prompting == true) {
-        return Container(
-  decoration: BoxDecoration(
-    color: Colors.white,
-    borderRadius: const BorderRadius.vertical(
-      top: Radius.circular(20),
-    ),
-    boxShadow: [
-      BoxShadow(
-        color: Colors.black.withOpacity(0.08),
-        blurRadius: 12,
-        offset: const Offset(0, -4),
-      ),
-    ],
-  ),
-  child: Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-    child: SingleChildScrollView(
-      controller: scrollController,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // --- Drag Handle
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 24),
-              height: 5,
-              width: 50,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-
-          // --- Title
-          Text(
-            "Are you sure you want to continue?",
-            style: GoogleFonts.inter(
-              decoration: TextDecoration.none,
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: Colors.black,
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // --- Fare Breakdown
-          _buildFareRow(
-            "Distance",
-            "${distance_km.toString()} Km",
-            fareloading,
-          ),
-          _buildFareRow(
-            "Commission",
-            "${NumberFormat().format(commission)} Ksh",
-            fareloading,
-          ),
-          _buildFareRow(
-            "Base Rate",
-            "${NumberFormat().format(base_fare)} Ksh",
-            fareloading,
-          ),
-          _buildFareRow(
-            "Fare",
-            "${NumberFormat().format(fare)} Ksh",
-            fareloading,
-            highlight: true,
-          ),
-
-          const SizedBox(height: 32),
-
-          // --- Proceed Button
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                backgroundColor: Colors.deepOrange[700],
-              ),
-              onPressed: () {
-                match();
-                fetchRoute();
-
-                _mapController.mapEventStream.listen((event) {
-                  if (loading) {
-                    setState(() => loading = false);
-                  }
-                });
-
-                var keyboardVisibility = KeyboardVisibilityController();
-                var keyboardSubscription =
-                    keyboardVisibility.onChange.listen((visible) {
-                  if (visible) {
-                    draggableController.animateTo(
-                      1.0,
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeOut,
-                    );
-                  }
-                });
-
-                getLocation();
-
-                // 🔌 connect to WebSocket server
-                wsService.connect("ws://209.126.8.100:8080/ws");
-
-                // 🔄 start streaming GPS
-                _gpsSub = Geolocator.getPositionStream(
-                  locationSettings: const LocationSettings(
-                    accuracy: LocationAccuracy.high,
-                    distanceFilter: 1,
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, -4),
+                      ),
+                    ],
                   ),
-                ).listen((Position pos) {
-                  final gpsData = jsonEncode({
-                    "lat": pos.latitude,
-                    "lng": pos.longitude,
-                    "user": username,
-                    "timestamp": DateTime.now().toIso8601String(),
-                  });
-                  wsService.send(gpsData);
-                });
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                    child: SingleChildScrollView(
+                      controller: scrollController,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // --- Drag Handle
+                          Center(
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 24),
+                              height: 5,
+                              width: 50,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
 
-                // 👂 listen for backend messages
-                wsService.stream.listen((message) {
-                  try {
-                    final data = jsonDecode(message);
-                    final orderId = data["order_id"];
-                    final lat = data["lat"];
-                    final lng = data["lng"];
+                          // --- Title
+                          Text(
+                            "Are you sure you want to continue?",
+                            style: GoogleFonts.inter(
+                              decoration: TextDecoration.none,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.black,
+                            ),
+                          ),
 
-                    getLocation();
+                          const SizedBox(height: 24),
 
-                    if (orderId == "12345") {
-                      setState(() {
-                        end = LatLng(lat, lng);
-                      });
+                          // --- Fare Breakdown
+                          _buildFareRow(
+                            "Distance",
+                            "${distance_km.toString()} Km",
+                            fareloading,
+                          ),
+                          _buildFareRow(
+                            "Commission",
+                            "${NumberFormat().format(commission)} Ksh",
+                            fareloading,
+                          ),
+                          _buildFareRow(
+                            "Base Rate",
+                            "${NumberFormat().format(base_fare)} Ksh",
+                            fareloading,
+                          ),
+                          _buildFareRow(
+                            "Fare",
+                            "${NumberFormat().format(fare)} Ksh",
+                            fareloading,
+                            highlight: true,
+                          ),
 
-                      updateRoutes(
-                        start.latitude,
-                        start.longitude,
-                        lat,
-                        lng,
-                      );
+                          const SizedBox(height: 32),
 
-                      _mapController.move(
-                        LatLng(lat, lng),
-                        18.0,
-                      );
+                          // --- Proceed Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(28),
+                                ),
+                                backgroundColor: Colors.deepOrange[700],
+                              ),
+                              onPressed: () {
+                                match();
+                                fetchRoute();
 
-                      fetchRoute();
-                    }
-                  } catch (e) {
-                    print("Invalid WS message: $e");
-                  }
-                });
-              },
-              child: Text(
-                "Proceed",
-                style: GoogleFonts.inter(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  ),
-);
+                                _mapController.mapEventStream.listen((event) {
+                                  if (loading) {
+                                    setState(() => loading = false);
+                                  }
+                                });
 
-// --- helper widget
+                                var keyboardVisibility =
+                                    KeyboardVisibilityController();
+                                var keyboardSubscription = keyboardVisibility
+                                    .onChange
+                                    .listen((visible) {
+                                      if (visible) {
+                                        draggableController.animateTo(
+                                          1.0,
+                                          duration: const Duration(
+                                            milliseconds: 200,
+                                          ),
+                                          curve: Curves.easeOut,
+                                        );
+                                      }
+                                    });
 
+                                getLocation();
 
+                                // 🔌 connect to WebSocket server
+                                wsService.connect("ws://209.126.8.100:8080/ws");
+
+                                // 🔄 start streaming GPS
+                                _gpsSub =
+                                    Geolocator.getPositionStream(
+                                      locationSettings: const LocationSettings(
+                                        accuracy: LocationAccuracy.high,
+                                        distanceFilter: 1,
+                                      ),
+                                    ).listen((Position pos) {
+                                      final gpsData = jsonEncode({
+                                        "lat": pos.latitude,
+                                        "lng": pos.longitude,
+                                        "user": username,
+                                        "timestamp": DateTime.now()
+                                            .toIso8601String(),
+                                      });
+                                      wsService.send(gpsData);
+                                    });
+
+                                // 👂 listen for backend messages
+                                wsService.stream.listen((message) {
+                                  try {
+                                    final data = jsonDecode(message);
+                                    final orderId = data["order_id"];
+                                    final lat = data["lat"];
+                                    final lng = data["lng"];
+
+                                    getLocation();
+
+                                    if (orderId == "12345") {
+                                      setState(() {
+                                        end = LatLng(lat, lng);
+                                      });
+
+                                      updateRoutes(
+                                        start.latitude,
+                                        start.longitude,
+                                        lat,
+                                        lng,
+                                      );
+
+                                      _mapController.move(
+                                        LatLng(lat, lng),
+                                        18.0,
+                                      );
+
+                                      fetchRoute();
+                                    }
+                                  } catch (e) {
+                                    print("Invalid WS message: $e");
+                                  }
+                                });
+                              },
+                              child: Text(
+                                "Proceed",
+                                style: GoogleFonts.inter(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+
+                // --- helper widget
               } else if (widget.tracking == true &&
                   prompting == false &&
                   driverfound == true) {
@@ -815,10 +826,10 @@ class _HomePageState extends State<HomePage> {
                                       radius: 24,
                                       backgroundColor: Colors.grey[300],
                                       child: Image.asset(
-                                                "assets/images/driver.png",
-                                                width: 50,
-                                                height: 50,
-                                              ),
+                                        "assets/images/driver.png",
+                                        width: 50,
+                                        height: 50,
+                                      ),
                                     ),
                                     SizedBox(width: 12),
                                     Column(
@@ -1216,6 +1227,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             Expanded(
               child: TypeAheadField<Map<String, dynamic>>(
+                direction: VerticalDirection.up,  
                 suggestionsCallback: (pattern) async {
                   if (pattern.isEmpty) return [];
                   return await _nominatimService.searchLocations(pattern);
@@ -1275,12 +1287,12 @@ class _HomePageState extends State<HomePage> {
                 // Center map on current location
                 _mapController.move(start, 18);
                 WidgetsBinding.instance.addPostFrameCallback((_) {
-        draggableController.animateTo(
-          0.2,
-          duration: Duration(milliseconds: 200),
-          curve: Curves.bounceIn,
-        );
-      });
+                  draggableController.animateTo(
+                    0.2,
+                    duration: Duration(milliseconds: 200),
+                    curve: Curves.bounceIn,
+                  );
+                });
               },
             ),
           ],
@@ -1349,8 +1361,13 @@ class _HomePageState extends State<HomePage> {
     }
   }
 }
-Widget _buildFareRow(String label, String value, bool loading,
-    {bool highlight = false}) {
+
+Widget _buildFareRow(
+  String label,
+  String value,
+  bool loading, {
+  bool highlight = false,
+}) {
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 8),
     child: Row(
@@ -1375,8 +1392,7 @@ Widget _buildFareRow(String label, String value, bool loading,
             style: GoogleFonts.inter(
               decoration: TextDecoration.none,
               fontSize: 16,
-              fontWeight:
-                  highlight ? FontWeight.w800 : FontWeight.w700,
+              fontWeight: highlight ? FontWeight.w800 : FontWeight.w700,
               color: highlight ? Colors.black : Colors.grey[600],
             ),
           ),
