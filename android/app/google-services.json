@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "932610158988",
+    "project_id": "swift-bf821",
+    "storage_bucket": "swift-bf821.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:932610158988:android:51cd5e4e44c8b8117f66a9",
+        "android_client_info": {
+          "package_name": "com.example.swift"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvTmKfCAPzUA_V9XYQYuwksaDqiO272ss"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:932610158988:android:2f6266c8e86df7fb7f66a9",
+        "android_client_info": {
+          "package_name": "com.example.swiftdriver"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvTmKfCAPzUA_V9XYQYuwksaDqiO272ss"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

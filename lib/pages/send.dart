@@ -1,22 +1,27 @@
 import 'dart:ffi';
 
+import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:choice/choice.dart';
 import 'package:dio/dio.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_places_autocomplete_text_field/google_places_autocomplete_text_field.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:new_loading_indicator/new_loading_indicator.dart';
 import 'package:phone_form_field/phone_form_field.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:swift/pages/homepage.dart';
 import 'package:swift/pages/match.dart';
 import 'package:swift/pages/payments.dart';
+import 'package:swift/services/nominatimservice.dart';
 
 class SendPage extends StatefulWidget {
   final String? location;
@@ -34,6 +39,24 @@ class _SendPageState extends State<SendPage> {
   var destination = LatLng(0, 0);
   var loading = false;
   var token = "";
+  bool fareloading = false;
+  bool calculatedfare = false;
+  var orderid = "";
+
+  //driver details
+  var driverphone = "";
+  var drivername = "";
+  var licenseplate = "";
+  bool driverfound = false;
+
+  //order details
+  bool promt = false;
+
+  //trip pricing
+  var fare = 0;
+  var commission = 0.0;
+  var base_fare = 0;
+  var distance_km = 0;
 
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -98,9 +121,54 @@ class _SendPageState extends State<SendPage> {
     await prefs.setString("tracking", "true");
   }
 
+  Future<void> calculateFare() async {
+    setState(() {
+      fareloading = true;
+    });
+    var key = await getToken();
+
+    var headers = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ${key}',
+    };
+    var data = json.encode({
+      "origin_lat": location.latitude,
+      "origin_lng": location.longitude,
+      "dest_lat": destination.latitude,
+      "dest_lng": destination.longitude,
+      "demand_factor,omitempty": 1.0, // default 1.0
+      "average_speed_kmph,omitempty": 80, // default 30
+    });
+    var dio = Dio();
+    var response = await dio.request(
+      'http://209.126.8.100:4141/api/fare/calculate',
+      options: Options(method: 'POST', headers: headers),
+      data: data,
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        fare = response.data["total_after_min"].toInt();
+        commission = response.data["platform_commission"];
+        base_fare = response.data["base_fare"].toInt();
+        distance_km = response.data["distance_km"].toInt();
+        calculatedfare = true;
+        fareloading = false;
+      });
+    } else {
+      print(response.statusMessage);
+
+      setState(() {
+        calculatedfare = true;
+        fareloading = false;
+      });
+    }
+  }
+
   Future<void> createOrder() async {
     _isLoading = true;
-    var key = await getToken();  
+    var key = await getToken();
 
     var headers = {
       'Accept': 'application/json',
@@ -125,8 +193,6 @@ class _SendPageState extends State<SendPage> {
       "droppffContactName": "jaydee",
     });
 
-
-
     var dio = Dio();
     var response = await dio.request(
       'http://209.126.8.100:4141/api/orders/create',
@@ -149,17 +215,434 @@ class _SendPageState extends State<SendPage> {
 
       var orderid = response.data["order"]["orderId"];
 
-      //Navigator.pop(context);
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              HomePage(tracking: true, promptstart: true, orderid: orderid, currentLocation: location, destination: destination),
+      setState(() {
+        this.orderid = orderid.toString();
+        promt = true;
+      });
+
+      AwesomeDialog(
+        context: context,
+        dialogBackgroundColor: Colors.white,
+        btnOkColor: Colors.deepOrange[700],
+        animType: AnimType.scale,
+        dialogType: DialogType.info,
+        body: Center(
+          child: Container(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: SingleChildScrollView(
+                //controller: scrollController,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // --- Drag Handle
+                    Center(
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 24),
+                        height: 5,
+                        width: 50,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+
+                    // --- Title
+                    Text(
+                      "Are you sure you want to continue?",
+                      style: GoogleFonts.inter(
+                        decoration: TextDecoration.none,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black,
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // --- Fare Breakdown
+                    _buildFareRow(
+                      "Distance",
+                      "${distance_km.toString()} Km",
+                      fareloading,
+                    ),
+                    _buildFareRow(
+                      "Commission",
+                      "${NumberFormat().format(commission)} Ksh",
+                      fareloading,
+                    ),
+                    _buildFareRow(
+                      "Base Rate",
+                      "${NumberFormat().format(base_fare)} Ksh",
+                      fareloading,
+                    ),
+                    _buildFareRow(
+                      "Fare",
+                      "${NumberFormat().format(fare)} Ksh",
+                      fareloading,
+                      highlight: true,
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    // --- Proceed Button
+                    // SizedBox(
+                    //   width: double.infinity,
+                    //   height: 56,
+                    //   child: ElevatedButton(
+                    //     style: ElevatedButton.styleFrom(
+                    //       elevation: 0,
+                    //       shape: RoundedRectangleBorder(
+                    //         borderRadius: BorderRadius.circular(28),
+                    //       ),
+                    //       backgroundColor: Colors.deepOrange[700],
+                    //     ),
+                    //     onPressed: () {
+                    //       match();
+                    //       // fetchRoute();
+
+                    //       // _mapController.mapEventStream.listen((event) {
+                    //       //   if (loading) {
+                    //       //     setState(() => loading = false);
+                    //       //   }
+                    //       // });
+
+                    //       // var keyboardVisibility =
+                    //       //     KeyboardVisibilityController();
+                    //       // var keyboardSubscription = keyboardVisibility
+                    //       //     .onChange
+                    //       //     .listen((visible) {
+                    //       //       if (visible) {
+                    //       //         draggableController.animateTo(
+                    //       //           1.0,
+                    //       //           duration: const Duration(
+                    //       //             milliseconds: 200,
+                    //       //           ),
+                    //       //           curve: Curves.easeOut,
+                    //       //         );
+                    //       //       }
+                    //       //     });
+
+                    //       // getLocation();
+
+                    //       // // 🔌 connect to WebSocket server
+                    //       // wsService.connect("ws://209.126.8.100:8080/ws");
+
+                    //       // // 🔄 start streaming GPS
+                    //       // _gpsSub =
+                    //       //     Geolocator.getPositionStream(
+                    //       //       locationSettings: const LocationSettings(
+                    //       //         accuracy: LocationAccuracy.high,
+                    //       //         distanceFilter: 1,
+                    //       //       ),
+                    //       //     ).listen((Position pos) {
+                    //       //       final gpsData = jsonEncode({
+                    //       //         "lat": pos.latitude,
+                    //       //         "lng": pos.longitude,
+                    //       //         "user": username,
+                    //       //         "timestamp": DateTime.now()
+                    //       //             .toIso8601String(),
+                    //       //       });
+                    //       //       wsService.send(gpsData);
+                    //       //     });
+
+                    //       // // 👂 listen for backend messages
+                    //       // wsService.stream.listen((message) {
+                    //       //   try {
+                    //       //     final data = jsonDecode(message);
+                    //       //     final orderId = data["order_id"];
+                    //       //     final lat = data["lat"];
+                    //       //     final lng = data["lng"];
+
+                    //       //     getLocation();
+
+                    //       //     if (orderId == "12345") {
+                    //       //       setState(() {
+                    //       //         end = LatLng(lat, lng);
+                    //       //       });
+
+                    //       //       updateRoutes(
+                    //       //         start.latitude,
+                    //       //         start.longitude,
+                    //       //         lat,
+                    //       //         lng,
+                    //       //       );
+
+                    //       //       _mapController.move(
+                    //       //         LatLng(lat, lng),
+                    //       //         18.0,
+                    //       //       );
+
+                    //       //       fetchRoute();
+                    //       //     }
+                    //       //   } catch (e) {
+                    //       //     print("Invalid WS message: $e");
+                    //       //   }
+                    //       // });
+                    //     },
+                    //     child: Text(
+                    //       "Proceed",
+                    //       style: GoogleFonts.inter(
+                    //         fontSize: 17,
+                    //         fontWeight: FontWeight.w800,
+                    //         color: Colors.white,
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
-      );
+        title: 'This is Ignored',
+        desc: 'This is also Ignored',
+        btnOkOnPress: () {
+          match();
+        },
+      ).show();
+
+      //Navigator.pop(context);
+      // Navigator.pushReplacement(
+      //   context,
+      //   MaterialPageRoute(
+      //     builder: (context) =>
+      //     Homepage()
+      //         //HomePage(tracking: true, promptstart: true, orderid: orderid, currentLocation: location, destination: destination),
+      //   ),
+      // );
     } else {
       print(response.statusMessage);
       _isLoading = false;
+    }
+  }
+
+  Future<void> match() async {
+    setState(() {
+      fareloading = true;
+      _isLoading = true;
+    });
+    var key = await getToken();
+    var headers = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': 'Bearer ${key}',
+    };
+    var data = {'orderId': orderid};
+    var dio = Dio();
+    var response = await dio.request(
+      'http://209.126.8.100:4141/api/orders/match-driver',
+      options: Options(method: 'POST', headers: headers),
+      data: data,
+    );
+
+    if (response.statusCode == 200) {
+      print(json.encode(response.data));
+      setState(() {
+        driverphone = response.data["userPhone"];
+        drivername = response.data["userName"];
+        licenseplate = response.data["licensePlate"];
+        driverfound = true;
+        promt = true;
+      });
+      
+
+      setState(() {
+        fareloading = false;
+        _isLoading = false;
+      });
+
+
+      AwesomeDialog(
+            context: context,
+            animType: AnimType.scale,
+            dialogType: DialogType.success,
+            dialogBackgroundColor: Colors.white,
+            btnOkColor: Colors.deepOrange[700],
+            body: Center(child: 
+            Container(
+                  
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 20, right: 20),
+                    child: SingleChildScrollView(
+                      //controller: scrollController,
+                      child: Padding(
+                        padding: EdgeInsets.only(top: 40),
+                        child: Card(
+                          color: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Top Row: Driver info
+                                Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 24,
+                                      backgroundColor: Colors.grey[300],
+                                      child: Image.asset(
+                                        "assets/images/driver.png",
+                                        width: 50,
+                                        height: 50,
+                                      ),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          drivername,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.star,
+                                              color: Colors.orangeAccent[400],
+                                              size: 16,
+                                            ),
+                                            Text(
+                                              "4.8",
+                                              style: GoogleFonts.inter(
+                                                fontSize: 14,
+                                                //fontWeight: FontWeight.w800,
+                                                color: Colors.black,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    Spacer(),
+                                    Text(
+                                      licenseplate,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 16),
+
+                                // Status row
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.directions_bike,
+                                      color: Colors.green,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        "Rider is on the way...",
+                                        style: GoogleFonts.inter(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 16),
+
+                                // Action buttons
+                                // Row(
+                                //   children: [
+                                //     Expanded(
+                                //       child: ElevatedButton.icon(
+                                //         onPressed: () => {},
+                                //         style: ElevatedButton.styleFrom(
+                                //           backgroundColor: Colors.grey,
+                                //           shape: RoundedRectangleBorder(
+                                //             borderRadius: BorderRadius.circular(
+                                //               10,
+                                //             ),
+                                //           ),
+                                //         ),
+                                //         icon: Icon(
+                                //           Icons.call,
+                                //           color: Colors.white,
+                                //         ),
+                                //         label: Text(
+                                //           "Call",
+                                //           style: GoogleFonts.inter(
+                                //             fontSize: 14,
+                                //             fontWeight: FontWeight.w700,
+                                //             color: Colors.white,
+                                //           ),
+                                //         ),
+                                //       ),
+                                //     ),
+                                //     SizedBox(width: 10),
+                                //     Expanded(
+                                //       child: ElevatedButton.icon(
+                                //         onPressed: () => {},
+                                //         style: ElevatedButton.styleFrom(
+                                //           backgroundColor: Colors.blue,
+                                //           shape: RoundedRectangleBorder(
+                                //             borderRadius: BorderRadius.circular(
+                                //               10,
+                                //             ),
+                                //           ),
+                                //         ),
+                                //         icon: Icon(
+                                //           Icons.message,
+                                //           color: Colors.white,
+                                //         ),
+                                //         label: Text(
+                                //           "Message",
+                                //           style: GoogleFonts.inter(
+                                //             fontSize: 14,
+                                //             fontWeight: FontWeight.w700,
+                                //             color: Colors.white,
+                                //           ),
+                                //         ),
+                                //       ),
+                                //     ),
+                                //   ],
+                                // ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                )),
+            title: 'This is Ignored',
+            desc:   'This is also Ignored',
+            btnOkOnPress: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => Homepage(),
+                  //HomePage(tracking: true, promptstart: true, orderid: orderid, currentLocation: location, destination: destination),
+                ),
+              );
+            },
+            ).show();
+
+            
+    } else {
+      print(response.statusMessage);
+      setState(() {
+        fareloading = false;
+        _isLoading = false;
+      });
     }
   }
 
@@ -206,6 +689,10 @@ class _SendPageState extends State<SendPage> {
   final phoneController = TextEditingController();
   final descriptionController = TextEditingController();
   final mpesaphoneController = PhoneController();
+  final TextEditingController _controller = TextEditingController();
+  final NominatimService _nominatimService = NominatimService();
+
+  String? selectedCoordinates;
   bool _isLoading = false;
 
   List<String> choices = ['Mpesa', 'Cash'];
@@ -305,6 +792,88 @@ class _SendPageState extends State<SendPage> {
                             color: Colors.deepOrange,
                           ),
                         ),
+                      ),
+                    ),
+                  ),
+
+                  Padding(
+                    padding: EdgeInsets.only(top: 10),
+                    child: Container(
+                      height: 50,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TypeAheadField<Map<String, dynamic>>(
+                              direction: VerticalDirection.up,
+                              suggestionsCallback: (pattern) async {
+                                if (pattern.isEmpty) return [];
+                                return await _nominatimService.searchLocations(
+                                  pattern,
+                                );
+                              },
+                              itemBuilder: (context, suggestion) {
+                                return Container(
+                                  color: Colors.white,
+                                  padding: EdgeInsets.all(13),
+                                  child: Text(
+                                    suggestion["displayName"],
+                                    style: GoogleFonts.inter(fontSize: 14),
+                                  ),
+                                );
+                              },
+                              onSelected: (suggestion) {
+                                setState(() {
+                                  _controller.text = suggestion["displayName"];
+                                  selectedCoordinates =
+                                      "Lat: ${suggestion["lat"]}, Lng: ${suggestion["lon"]}";
+
+                                  destination = LatLng(
+                                    double.parse(suggestion["lat"]),
+                                    double.parse(suggestion["lon"]),
+                                  );
+                                  destinationController.text =
+                                      suggestion["displayName"];
+                                });
+
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => SendPage(
+                                      location: suggestion["displayName"],
+                                      throughpass: true,
+                                      destiny: LatLng(
+                                        double.tryParse(suggestion["lat"])!,
+                                        double.tryParse(suggestion["lon"])!,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                              // 👇 instead of textFieldConfiguration
+                              builder: (context, controller, focusNode) {
+                                _controller.value =
+                                    controller.value; // keep sync if needed
+                                return TextField(
+                                  style: GoogleFonts.inter(),
+                                  controller: controller,
+                                  focusNode: focusNode,
+                                  decoration: InputDecoration(
+                                    labelText: "Where to?",
+                                    border: InputBorder.none,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -521,6 +1090,7 @@ class _SendPageState extends State<SendPage> {
                               ),
                             );
                           } else {
+                            calculateFare();
                             createOrder();
                           }
 
@@ -550,6 +1120,46 @@ class _SendPageState extends State<SendPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildFareRow(
+    String label,
+    String value,
+    bool loading, {
+    bool highlight = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Skeletonizer(
+            enabled: loading,
+            child: Text(
+              "$label:",
+              style: GoogleFonts.inter(
+                decoration: TextDecoration.none,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+            ),
+          ),
+          Skeletonizer(
+            enabled: loading,
+            child: Text(
+              value,
+              style: GoogleFonts.inter(
+                decoration: TextDecoration.none,
+                fontSize: 16,
+                fontWeight: highlight ? FontWeight.w800 : FontWeight.w700,
+                color: highlight ? Colors.black : Colors.grey[600],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -40,6 +40,7 @@ dependencies:
   price_text: ^0.0.5
   intl: ^0.20.2
   skeletonizer: ^2.1.0+1
+  awesome_dialog: ^3.2.1
 
 
 

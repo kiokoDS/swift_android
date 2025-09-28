@@ -17,7 +17,7 @@ class Indexpage extends StatefulWidget {
 class _IndexAppState extends State<Indexpage> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [HomePage(), OrdersPage(), AccountPage()];
+  final List<Widget> _pages = [Homepage(), OrdersPage(), AccountPage()];
 
   var username = "";
   var token = "";

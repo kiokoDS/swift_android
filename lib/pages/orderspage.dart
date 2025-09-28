@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:swift/pages/tracker.dart';
 
 class OrdersPage extends StatefulWidget {
   @override
@@ -84,6 +85,15 @@ class _OrdersPageState extends State<OrdersPage> {
                   color: Colors.white,
                   margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: ListTile(
+                    onTap: (){
+                      print(order["orderId"]);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Tracker(orderid: order["orderId"]), // Replace with your detail page
+                        ),
+                      );  
+                    },
                     title: Padding(
                       padding: EdgeInsetsGeometry.only(bottom: 10),
                       child: Row(
