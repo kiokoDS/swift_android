@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:primer_progress_bar/primer_progress_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swift/pages/tracker.dart';
 
@@ -8,6 +9,47 @@ class OrdersPage extends StatefulWidget {
   @override
   State<OrdersPage> createState() => _OrdersPageState();
 }
+
+List<Segment> segments = [
+  Segment(
+    value: 80,
+    color: Colors.blueGrey,
+    valueLabel: Text(
+      "80%",
+      style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800),
+    ),
+    label: Text(
+      "Rider Coming",
+      style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800),
+    ),
+  ),
+  Segment(
+    value: 14,
+    valueLabel: Text(
+      "14%",
+      style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800),
+    ),
+    color: Colors.deepOrange,
+    label: Text(
+      "In progress",
+      style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800),
+    ),
+  ),
+  Segment(
+    value: 0,
+    valueLabel: Text(
+      "0%",
+      style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800),
+    ),
+    color: Colors.green,
+    label: Text(
+      "Done",
+      style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800),
+    ),
+  ),
+];
+
+final progressBar = PrimerProgressBar(segments: segments);
 
 class _OrdersPageState extends State<OrdersPage> {
   var token = "";
@@ -85,14 +127,16 @@ class _OrdersPageState extends State<OrdersPage> {
                   color: Colors.white,
                   margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   child: ListTile(
-                    onTap: (){
+                    onTap: () {
                       print(order["orderId"]);
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Tracker(orderid: order["orderId"]), // Replace with your detail page
+                          builder: (context) => Tracker(
+                            orderid: order["orderId"],
+                          ), // Replace with your detail page
                         ),
-                      );  
+                      );
                     },
                     title: Padding(
                       padding: EdgeInsetsGeometry.only(bottom: 10),
@@ -145,14 +189,14 @@ class _OrdersPageState extends State<OrdersPage> {
                         ),
                         SizedBox(height: 10),
 
-                        LinearProgressIndicator(
-                          value: 0.2, // value between 0.0 and 1.0
-                          minHeight: 8,
-                          borderRadius: BorderRadius.circular(10),
-                          backgroundColor: Colors.grey[300],
-                          color: Colors.deepOrange, // filled color
-                        ),
-
+                        // LinearProgressIndicator(
+                        //   value: 0.2, // value between 0.0 and 1.0
+                        //   minHeight: 8,
+                        //   borderRadius: BorderRadius.circular(10),
+                        //   backgroundColor: Colors.grey[300],
+                        //   color: Colors.deepOrange, // filled color
+                        // ),
+                        progressBar,
                         // Container(
                         //   decoration: BoxDecoration(
                         //     borderRadius: BorderRadius.circular(10),

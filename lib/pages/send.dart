@@ -18,6 +18,7 @@ import 'package:new_loading_indicator/new_loading_indicator.dart';
 import 'package:phone_form_field/phone_form_field.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:swift/main.dart';
 import 'package:swift/pages/homepage.dart';
 import 'package:swift/pages/match.dart';
 import 'package:swift/pages/payments.dart';
@@ -629,7 +630,7 @@ class _SendPageState extends State<SendPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => Homepage(),
+                  builder: (context) => MainApp(),
                   //HomePage(tracking: true, promptstart: true, orderid: orderid, currentLocation: location, destination: destination),
                 ),
               );
