@@ -270,14 +270,10 @@ class _SendPageState extends State<SendPage> {
                     ),
                     _buildFareRow(
                       "Commission",
-                      "${NumberFormat().format(commission)} Ksh",
+                      "0.15%",
                       fareloading,
                     ),
-                    _buildFareRow(
-                      "Base Rate",
-                      "${NumberFormat().format(base_fare)} Ksh",
-                      fareloading,
-                    ),
+                   
                     _buildFareRow(
                       "Fare",
                       "${NumberFormat().format(fare)} Ksh",

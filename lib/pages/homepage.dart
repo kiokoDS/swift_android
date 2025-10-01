@@ -1,11 +1,14 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swift/pages/receive.dart';
 import 'package:swift/pages/request.dart';
 import 'package:swift/pages/riders.dart';
 import 'package:swift/pages/send.dart';
+import 'package:swift/pages/ui/Etacard.dart';
 import 'package:swift/services/nominatimservice.dart';
 
 class Homepage extends StatefulWidget {
@@ -19,6 +22,11 @@ class _HomepageState extends State<Homepage> {
   bool _isDraggingPin = false;
   LatLng? _draggedPosition;
   String? selectedCoordinates;
+
+  var token = "";
+  final Dio dio = Dio();
+  List<dynamic> orders = [];
+  bool isLoading = true;
 
   final List<Map<String, dynamic>> items = [
     {
@@ -47,6 +55,51 @@ class _HomepageState extends State<Homepage> {
     },
   ];
 
+  Future<void> fetchOrders() async {
+    var key = await getToken();
+    var headers = {'Authorization': "Bearer ${key}"};
+
+    try {
+      var response = await dio.request(
+        'http://209.126.8.100:4141/api/orders/all?page=0',
+        options: Options(method: 'GET', headers: headers),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          orders =
+              response.data["items"] ??
+              response.data; // Adjust depending on API structure
+          isLoading = false;
+        });
+      } else {
+        print("Error: ${response.statusMessage}");
+        print("Token: $token");
+        setState(() => isLoading = false);
+      }
+    } catch (e) {
+      print("Exception: $e");
+      print(headers);
+      setState(() => isLoading = false);
+    }
+  }
+
+  Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      token = prefs.getString("token")!;
+    });
+    return prefs.getString("token");
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getToken();
+    fetchOrders();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -54,10 +107,7 @@ class _HomepageState extends State<Homepage> {
       body: SafeArea(
         top: false,
         child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            
-          ),
+          decoration: BoxDecoration(color: Colors.white),
           child: Padding(
             padding: EdgeInsets.only(left: 20, right: 20),
             child: SingleChildScrollView(
@@ -104,19 +154,7 @@ class _HomepageState extends State<Homepage> {
                   ),
 
                   _buildSearchBox(),
-                  Padding(
-                    padding: EdgeInsets.only(top: 20, bottom: 6),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Lets send a package",
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 20,
-                        ),
-                      ),
-                    ),
-                  ),
+                  
 
                   Padding(
                     padding: EdgeInsets.only(top: 10, bottom: 20),
@@ -177,7 +215,22 @@ class _HomepageState extends State<Homepage> {
                       ),
                     ),
                   ),
-                  
+
+                  isLoading
+                      ? CircularProgressIndicator()
+                      : Padding(
+                          padding: EdgeInsets.only(top: 20),
+                          child: SingleChildScrollView(
+                            child: Column(
+                              children: orders.map((order) {
+                                return Padding(padding: EdgeInsets.only(bottom: 10), child: EtaCard(
+                                  driverName: "driver1",
+                                  etaText: "5 mins",
+                                ));
+                              }).toList(),
+                            ),
+                          ),
+                        ),
                 ],
               ),
             ),
