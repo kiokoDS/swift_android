@@ -216,6 +216,19 @@ class _HomepageState extends State<Homepage> {
                     ),
                   ),
 
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Recent Activity",
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+
                   isLoading
                       ? CircularProgressIndicator()
                       : Padding(
