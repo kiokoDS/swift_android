@@ -15,7 +15,7 @@ class EtaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2,
+      elevation: 1,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
@@ -24,7 +24,8 @@ class EtaCard extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.deepOrange.shade400, Colors.deepOrange.shade700],
+            colors: [Colors.blueAccent.shade100, Colors.blueAccent.shade400],
+            //colors: [Colors.white, Colors.white70],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -34,11 +35,12 @@ class EtaCard extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 28,
-              backgroundColor: Colors.white,
-              child: Icon(
-                Icons.bike_scooter, // or Icons.directions_car
-                color: Colors.deepOrange.shade700,
-                size: 32,
+              backgroundColor: Colors.white70,
+              child: Image.asset(
+                'assets/images/avatar.jpg',
+                fit: BoxFit.cover,
+                width: 100,
+                height: 100,
               ),
             ),
             const SizedBox(width: 16),
@@ -49,8 +51,8 @@ class EtaCard extends StatelessWidget {
                   Text(
                     "Driver is on the way",
                     style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                       color: Colors.white,
                     ),
                   ),
@@ -74,13 +76,13 @@ class EtaCard extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 etaText,
                 style: GoogleFonts.inter(
                   fontWeight: FontWeight.bold,
-                  color: Colors.deepOrange.shade700,
+                  color: Colors.black87,
                 ),
               ),
             )
