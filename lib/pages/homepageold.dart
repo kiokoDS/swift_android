@@ -20,6 +20,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:swift/pages/receive.dart';
 import 'package:swift/pages/request.dart';
 import 'package:swift/pages/riders.dart';
+import 'package:swift/pages/schedule.dart';
 import 'package:swift/pages/send.dart';
 import 'package:swift/services/nominatimservice.dart';
 import 'package:swift/services/websocketservice.dart';
@@ -1318,7 +1319,7 @@ class _HomePageState extends State<HomePageold> {
       "title": "Schedule",
       "subtitle": "deliver later",
       "asset": "assets/images/mail.png",
-      "page": Requestpage(),
+      "page": SchedulePage(),
     },
     {
       "title": "Riders",

@@ -36,6 +36,9 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <meta-data
+        android:name="MAPBOX_ACCESS_TOKEN"
+        android:value="pk.eyJ1Ijoia2lva28xMjEiLCJhIjoiY21la2FxMG8wMDViYjJrcXZ3MWFmd2ZvZSJ9.3FCWY9P2G8ZKrmLG1XZWcw" />
 
     </application>
     <uses-permission android:name="android.permission.INTERNET" />

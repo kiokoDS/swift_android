@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:new_loading_indicator/new_loading_indicator.dart';
 import 'package:primer_progress_bar/primer_progress_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swift/pages/tracker.dart';
@@ -10,26 +11,10 @@ class OrdersPage extends StatefulWidget {
   State<OrdersPage> createState() => _OrdersPageState();
 }
 
-class Segment {
-  final double value;
-  final Color color;
-  final Widget valueLabel;
-  final Widget label;
-
-  Segment({
-    required this.value,
-    required this.color,
-    required this.valueLabel,
-    required this.label,
-  });
-}
-
-
-
+// Use the Segment class exported by the primer_progress_bar package
+// (removed local duplicate to avoid type conflict with package's Segment).
 
 class _OrdersPageState extends State<OrdersPage> {
-
- 
   var token = "";
 
   final Dio dio = Dio();
@@ -93,7 +78,16 @@ class _OrdersPageState extends State<OrdersPage> {
         ),
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator(color: Colors.deepOrange))
+          ? Center(
+              child: Container(
+                height: 100,
+                child: LoadingIndicator(
+                  indicatorType: Indicator.ballPulseSync,
+                  colors: const [Colors.deepOrangeAccent],
+                  strokeWidth: 2,
+                ),
+              ),
+            )
           : orders.isEmpty
           ? Center(child: Text("No orders found"))
           : ListView.builder(
@@ -135,11 +129,15 @@ class _OrdersPageState extends State<OrdersPage> {
                               ),
                             ),
                           ),
-                          Padding(
-                            padding: EdgeInsetsGeometry.only(left: 10),
-                            child: Text(
-                              "${order["orderId"] ?? "N/A"}",
-                              style: GoogleFonts.inter(fontSize: 10),
+                          Container(
+                            width: 210,
+                            child: Padding(
+                              padding: EdgeInsetsGeometry.only(left: 10),
+                              child: Text(
+                                overflow: TextOverflow.ellipsis,
+                                "${order["orderId"] ?? "N/A"}",
+                                style: GoogleFonts.inter(fontSize: 10),
+                              ),
                             ),
                           ),
                         ],
@@ -167,16 +165,12 @@ class _OrdersPageState extends State<OrdersPage> {
                         ),
                         SizedBox(height: 10),
 
-                        // LinearProgressIndicator(
-                        //   value: 0.2, // value between 0.0 and 1.0
-                        //   minHeight: 8,
-                        //   borderRadius: BorderRadius.circular(10),
-                        //   backgroundColor: Colors.grey[300],
-                        //   color: Colors.deepOrange, // filled color
-                        // ),
                         PrimerProgressBar(
-  segments: getSegments('in-transit'), // or 'pending' / 'complete'
-);,
+                          segments: getSegments(
+                            order["status"] ?? "pending",
+                          ), // or 'pending' / 'complete'
+                        ),
+
                         // Container(
                         //   decoration: BoxDecoration(
                         //     borderRadius: BorderRadius.circular(10),
@@ -214,70 +208,70 @@ class _OrdersPageState extends State<OrdersPage> {
     );
   }
 
-   List<Segment> getSegments(String state) {
-  // Default percentages
-  double pendingValue = 0;
-  double inTransitValue = 0;
-  double doneValue = 0;
+  List<Segment> getSegments(String state) {
+    // Default percentages
+    int pendingValue = 0;
+    int inTransitValue = 0;
+    int doneValue = 0;
 
-  // Assign percentage based on current state
-  switch (state) {
-    case 'pending':
-      pendingValue = 80;
-      inTransitValue = 14;
-      doneValue = 0;
-      break;
-    case 'in-transit':
-      pendingValue = 0;
-      inTransitValue = 80;
-      doneValue = 14;
-      break;
-    case 'complete':
-      pendingValue = 0;
-      inTransitValue = 0;
-      doneValue = 100;
-      break;
-    default:
-      break;
+    // Assign percentage based on current state
+    switch (state) {
+      case 'pending':
+        pendingValue = 80;
+        inTransitValue = 14;
+        doneValue = 0;
+        break;
+      case 'in-transit':
+        pendingValue = 0;
+        inTransitValue = 80;
+        doneValue = 14;
+        break;
+      case 'complete':
+        pendingValue = 0;
+        inTransitValue = 0;
+        doneValue = 100;
+        break;
+      default:
+        break;
+    }
+
+    return [
+      Segment(
+        value: pendingValue,
+        color: Colors.blueGrey,
+        valueLabel: Text(
+          "$pendingValue%",
+          style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800),
+        ),
+        label: Text(
+          "Rider Coming",
+          style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800),
+        ),
+      ),
+      Segment(
+        value: inTransitValue,
+        color: Colors.deepOrange,
+        valueLabel: Text(
+          "$inTransitValue%",
+          style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800),
+        ),
+        label: Text(
+          "In Progress",
+          style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800),
+        ),
+      ),
+      Segment(
+        value: doneValue,
+        color: Colors.green,
+        valueLabel: Text(
+          "$doneValue%",
+          style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800),
+        ),
+        label: Text(
+          "Done",
+          style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800),
+        ),
+      ),
+    ];
   }
-
-  return [
-    Segment(
-      value: pendingValue,
-      color: Colors.blueGrey,
-      valueLabel: Text(
-        "${pendingValue.toInt()}%",
-        style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800),
-      ),
-      label: Text(
-        "Rider Coming",
-        style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800),
-      ),
-    ),
-    Segment(
-      value: inTransitValue,
-      color: Colors.deepOrange,
-      valueLabel: Text(
-        "${inTransitValue.toInt()}%",
-        style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800),
-      ),
-      label: Text(
-        "In Progress",
-        style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800),
-      ),
-    ),
-    Segment(
-      value: doneValue,
-      color: Colors.green,
-      valueLabel: Text(
-        "${doneValue.toInt()}%",
-        style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800),
-      ),
-      label: Text(
-        "Done",
-        style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800),
-      ),
-    ),
-  ];
-}
 }

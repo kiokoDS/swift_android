@@ -127,20 +127,20 @@ class _IndexAppState extends State<Indexpage> {
                 ],
               ),
             ),
-            ListTile(
-              leading: Icon(FeatherIcons.creditCard, size: 20),
-              title: Text(
-                "Payments",
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => Payments()),
-              ),
-            ),
+            // ListTile(
+            //   leading: Icon(FeatherIcons.creditCard, size: 20),
+            //   title: Text(
+            //     "Payments",
+            //     style: GoogleFonts.inter(
+            //       fontSize: 14,
+            //       fontWeight: FontWeight.w600,
+            //     ),
+            //   ),
+            //   onTap: () => Navigator.push(
+            //     context,
+            //     MaterialPageRoute(builder: (_) => Payments()),
+            //   ),
+            // ),
             ListTile(
               leading: Icon(Icons.card_giftcard, size: 20),
               title: Text(

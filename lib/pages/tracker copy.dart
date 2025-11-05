@@ -1,15 +1,12 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_osm_plugin/flutter_osm_plugin.dart' hide MapController;
-// import 'package:geolocator/geolocator.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:new_loading_indicator/new_loading_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swift/services/nominatimservice.dart';
@@ -33,14 +30,9 @@ class _TrackerState extends State<Tracker> {
   LatLng start = LatLng(-1.286389, 36.817223);
   LatLng end = LatLng(-1.2921, 36.8219);
 
-  late MapboxMap mapboxMap;
-  PointAnnotationManager? pointAnnotationManager;
-  PolylineAnnotationManager? lineManager;
-
   //mapdata
   final MapController _mapController = MapController();
   final NominatimService _nominatimService = NominatimService();
-
   List<LatLng> routePoints = [];
 
   bool loading = false;
@@ -64,30 +56,55 @@ class _TrackerState extends State<Tracker> {
     return prefs.getString("token");
   }
 
-  // Future<Position> _getCurrentLocation() async {
-  //   // Ask for permission
-  //   bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-  //   if (!serviceEnabled) {
-  //     return Future.error('Location services are disabled.');
-  //   }
+  Future<Position> _getCurrentLocation() async {
+    // Ask for permission
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return Future.error('Location services are disabled.');
+    }
 
-  //   LocationPermission permission = await Geolocator.checkPermission();
-  //   if (permission == LocationPermission.denied) {
-  //     permission = await Geolocator.requestPermission();
-  //     if (permission == LocationPermission.denied) {
-  //       return Future.error('Location permissions are denied');
-  //     }
-  //   }
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return Future.error('Location permissions are denied');
+      }
+    }
 
-  //   if (permission == LocationPermission.deniedForever) {
-  //     return Future.error('Location permissions are permanently denied.');
-  //   }
+    if (permission == LocationPermission.deniedForever) {
+      return Future.error('Location permissions are permanently denied.');
+    }
 
-  //   // Get current position
-  //   return await Geolocator.getCurrentPosition(
-  //     desiredAccuracy: LocationAccuracy.high,
-  //   );
-  // }
+    // Get current position
+    return await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+  }
+
+  Future<void> getOrderDetailsold() async {
+    try {
+      setState(() {
+        loading = true;
+      });
+      var key = await getToken();
+      final dio = Dio();
+      final response = await dio.request(
+        'http://209.126.8.100:4141/api/orders/${widget.orderid}/details',
+        options: Options(
+          method: 'GET',
+          headers: {'Authorization': 'Bearer $key'},
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        print(json.encode(response.data));
+      } else {
+        print(response.statusMessage);
+      }
+    } catch (e) {
+      print('Error fetching order details: $e');
+    }
+  }
 
   Future<void> getOrderDetails() async {
     try {
@@ -265,9 +282,6 @@ class _TrackerState extends State<Tracker> {
   @override
   void initState() {
     super.initState();
-    MapboxOptions.setAccessToken(
-      "pk.eyJ1Ijoia2lva28xMjEiLCJhIjoiY21la2FxMG8wMDViYjJrcXZ3MWFmd2ZvZSJ9.3FCWY9P2G8ZKrmLG1XZWcw",
-    );
     getToken();
     // _getCurrentLocation()
     //     .then((position) {
@@ -291,139 +305,8 @@ class _TrackerState extends State<Tracker> {
     super.dispose();
   }
 
-  Future<void> _onMapCreated(MapboxMap mapboxMap) async {
-  this.mapboxMap = mapboxMap;
-
-  // Managers
-  pointAnnotationManager = await mapboxMap.annotations.createPointAnnotationManager();
-  lineManager = await mapboxMap.annotations.createPolylineAnnotationManager(); // ✅ add this line
-
-  // Load icons
-  final ByteData bytes = await rootBundle.load("assets/images/bike.png");
-  final ByteData bytes2 = await rootBundle.load("assets/images/box.png");
-
-  final Uint8List imageData = bytes.buffer.asUint8List();
-  final Uint8List imageData2 = bytes2.buffer.asUint8List();
-
-  // Add two markers
-  await pointAnnotationManager?.create(PointAnnotationOptions(
-    geometry: Point(coordinates: Position(start.longitude, start.latitude)),
-    image: imageData,
-    iconSize: 0.3,
-  ));
-
-  await pointAnnotationManager?.create(PointAnnotationOptions(
-    geometry: Point(coordinates: Position(end.longitude, end.latitude)),
-    image: imageData2,
-    iconSize: 0.3,
-  ));
-
-  // 🛣️ draw the route
-  await _drawRoute();
-}
-
-
-  Future<void> _drawRoute() async {
-  const orsApiKey =
-      "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjZjNGY5M2ViNzJkMTQ1ODhiZGU1MDNjNjRlMjQxOTk3IiwiaCI6Im11cm11cjY0In0=";
-
-  final url =
-      "https://api.openrouteservice.org/v2/directions/driving-car?api_key=$orsApiKey&start=${start.longitude},${start.latitude}&end=${end.longitude},${end.latitude}";
-  final response = await http.get(Uri.parse(url));
-  if (response.statusCode != 200) return;
-
-  final data = jsonDecode(response.body);
-  final coords = data["features"][0]["geometry"]["coordinates"] as List;
-
-  // Convert route coordinates to GeoJSON LineString
-  final geojson = {
-    "type": "FeatureCollection",
-    "features": [
-      {
-        "type": "Feature",
-        "geometry": {
-          "type": "LineString",
-          "coordinates": coords,
-        },
-        "properties": {}
-      }
-    ]
-  };
-
-  // Add GeoJSON source to map
-  await mapboxMap.style.addSource(GeoJsonSource(
-    id: "route-source",
-    data: jsonEncode(geojson),
-  ));
-
-  // Add styled route layer
-  await mapboxMap.style.addLayer(LineLayer(
-    id: "route-layer",
-    sourceId: "route-source",
-    lineJoin: LineJoin.ROUND,
-    lineCap: LineCap.ROUND,
-    lineBorderColor: Colors.black.value,
-    lineBorderWidthExpression: [
-      'interpolate',
-      ['exponential', 1.5],
-      ['zoom'],
-      9.0,
-      1.0,
-      16.0,
-      3.0,
-    ],
-    lineWidthExpression: [
-      'interpolate',
-      ['exponential', 1.5],
-      ['zoom'],
-      4.0,
-      4.0,
-      10.0,
-      6.0,
-      13.0,
-      8.0,
-      16.0,
-      10.0,
-      19.0,
-      12.0,
-      22.0,
-      18.0,
-    ],
-    lineColorExpression: [
-      'interpolate',
-      ['linear'],
-      ['zoom'],
-      8.0,
-      'rgb(51, 102, 255)',
-      11.0,
-      [
-        'coalesce',
-        ['get', 'route-color'],
-        'rgb(51, 102, 255)',
-      ],
-    ],
-  ));
-
-  // Center map on route end
-  await mapboxMap.flyTo(
-    CameraOptions(
-      center: Point(coordinates: Position(end.longitude, end.latitude)),
-      zoom: 14.5,
-    ),
-    MapAnimationOptions(duration: 2000, startDelay: 0),
-  );
-}
-
-
   @override
   Widget build(BuildContext context) {
-    CameraOptions camera = CameraOptions(
-      center: Point(coordinates: Position(start.longitude, start.latitude)),
-      zoom: 15,
-      bearing: 20,
-      pitch: 20,
-    );
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -445,7 +328,58 @@ class _TrackerState extends State<Tracker> {
             )
           : Stack(
               children: [
-                MapWidget(cameraOptions: camera, onMapCreated: _onMapCreated),
+                FlutterMap(
+                  options: MapOptions(initialCenter: center, initialZoom: 18.0),
+                  mapController: _mapController,
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://api.maptiler.com/maps/dataviz/{z}/{x}/{y}.png?key=5pYqr4DbTOErEL2iL0ul',
+                      userAgentPackageName: 'com.kios19.swift',
+                      tileProvider: NetworkTileProvider(), // optional, explicit
+                      tileSize: 256,
+                      keepBuffer: 2,
+                      maxZoom: 20,
+                      minZoom: 10,
+                    ),
+                    PolylineLayer<Object>(
+                      polylines: routePoints.isNotEmpty
+                          ? [
+                              Polyline<Object>(
+                                points: routePoints,
+                                strokeWidth: 6,
+                                color: Colors.blue,
+                                strokeCap: StrokeCap.round,
+                              ),
+                            ]
+                          : [],
+                    ),
+
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: start,
+                          width: 30,
+                          height: 30,
+                          child: Icon(
+                            Icons.assistant_navigation,
+                            color: Colors.black,
+                          ),
+                        ),
+                        Marker(
+                          point: end,
+                          width: 40,
+                          height: 40,
+                          child: Image.asset(
+                            "assets/images/bike.png",
+                            width: 40,
+                            height: 40,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ],
             ),
     );

@@ -28,18 +28,18 @@ import 'package:swift/services/nominatimservice.dart';
 import 'package:swift/services/photon_service.dart';
 import 'package:swift/services/websocketserviceasync.dart';
 
-class SendPage extends StatefulWidget {
+class SchedulePage extends StatefulWidget {
   final String? location;
   final bool? throughpass;
   final LatLng? destiny;
-  const SendPage({Key? key, this.location, this.throughpass, this.destiny})
+  const SchedulePage({Key? key, this.location, this.throughpass, this.destiny})
       : super(key: key);
 
   @override
-  State<SendPage> createState() => _SendPageState();
+  State<SchedulePage> createState() => _SchedulePageState();
 }
 
-class _SendPageState extends State<SendPage> {
+class _SchedulePageState extends State<SchedulePage> {
 
   final wsService = WebSocketService();
 
@@ -49,7 +49,6 @@ class _SendPageState extends State<SendPage> {
   var destination = LatLng(0, 0);
   var loading = false;
   var token = "";
-  var userid = "";
   bool fareloading = false;
   bool calculatedfare = false;
   var orderid = "";
@@ -78,7 +77,6 @@ class _SendPageState extends State<SendPage> {
 
     setState(() {
       token = prefs.getString("token")!;
-      userid = prefs.getString("user_id")!;
     });
     return prefs.getString("token");
   }
@@ -190,8 +188,8 @@ class _SendPageState extends State<SendPage> {
       'Authorization': 'Bearer ${key}',
     };
     var data = json.encode({
-      "userId": userid,
-      "status": "pending",
+      "userId": 1,
+      "status": isScheduled ? "scheduled" : "pending",
       "pickupAddress": locationController.text,
       "pickupContactName": nameController.text,
       "pickupContactPhone": phoneController.text,
@@ -208,6 +206,8 @@ class _SendPageState extends State<SendPage> {
       "paymentMethod": paymentMethod,
       "paymentReference": paymentReference,
       "fare": fare,
+      if (isScheduled && scheduledDateTime != null)
+        "scheduledTime": scheduledDateTime!.toIso8601String(),
     });
 
     var dio = Dio();
@@ -232,8 +232,90 @@ class _SendPageState extends State<SendPage> {
         promt = true;
       });
 
-      // Now match the driver
-      match();
+      // Only match driver immediately if not scheduled
+      // Scheduled orders will be matched by the backend at the scheduled time
+      if (!isScheduled) {
+        match();
+      } else {
+        // Show success message for scheduled orders
+        setState(() {
+          _isLoading = false;
+        });
+        
+        AwesomeDialog(
+          context: context,
+          animType: AnimType.scale,
+          dialogType: DialogType.success,
+          dialogBackgroundColor: Colors.white,
+          btnOkColor: Colors.deepOrange[700],
+          body: Center(
+            child: Container(
+              child: Padding(
+                padding: EdgeInsets.only(left: 20, right: 20),
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 40),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.check_circle,
+                          color: Colors.green,
+                          size: 64,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          "Order Scheduled!",
+                          style: GoogleFonts.inter(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.black,
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          "Your order has been scheduled for",
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          DateFormat('MMM dd, yyyy • hh:mm a').format(scheduledDateTime!),
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.deepOrange[700],
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          "A driver will be matched and notified at the scheduled time.",
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          title: 'This is Ignored',
+          desc: 'This is also Ignored',
+          btnOkOnPress: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MainApp(),
+              ),
+            );
+          },
+        ).show();
+      }
     } else {
       print(response.statusMessage);
       setState(() {
@@ -493,6 +575,12 @@ class _SendPageState extends State<SendPage> {
                     selectedValue ?? "Not selected",
                     false,
                   ),
+                  if (isScheduled && scheduledDateTime != null)
+                    _buildFareRow(
+                      "Scheduled Time",
+                      DateFormat('MMM dd, yyyy • hh:mm a').format(scheduledDateTime!),
+                      false,
+                    ),
                   const SizedBox(height: 32),
                 ],
               ),
@@ -610,8 +698,68 @@ class _SendPageState extends State<SendPage> {
 
   String? selectedValue;
 
+  // Scheduling variables
+  bool isScheduled = false;
+  DateTime? scheduledDateTime;
+
   void setSelectedValue(String? value) {
     setState(() => selectedValue = value);
+  }
+
+  Future<void> _selectDateTime() async {
+    // First select date
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(Duration(hours: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(Duration(days: 30)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.deepOrange[700]!,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate != null) {
+      // Then select time
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(
+          DateTime.now().add(Duration(hours: 1)),
+        ),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: ColorScheme.light(
+                primary: Colors.deepOrange[700]!,
+                onPrimary: Colors.white,
+                onSurface: Colors.black,
+              ),
+            ),
+            child: child!,
+          );
+        },
+      );
+
+      if (pickedTime != null) {
+        setState(() {
+          scheduledDateTime = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+        });
+      }
+    }
   }
 
   @override
@@ -818,6 +966,96 @@ class _SendPageState extends State<SendPage> {
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         Text(
+                          "Schedule Delivery",
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Divider(),
+                  Padding(
+                    padding: EdgeInsets.only(top: 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            "Schedule for later",
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        Switch(
+                          value: isScheduled,
+                          onChanged: (value) {
+                            setState(() {
+                              isScheduled = value;
+                              if (!value) {
+                                scheduledDateTime = null;
+                              } else if (scheduledDateTime == null) {
+                                // Set default to 1 hour from now
+                                scheduledDateTime = DateTime.now().add(Duration(hours: 1));
+                              }
+                            });
+                          },
+                          activeColor: Colors.deepOrange[700],
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isScheduled) Padding(
+                    padding: EdgeInsets.only(top: 10),
+                    child: InkWell(
+                      onTap: _selectDateTime,
+                      child: Container(
+                        height: 50,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today,
+                              color: Colors.deepOrange[700],
+                              size: 20,
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                scheduledDateTime != null
+                                    ? DateFormat('MMM dd, yyyy • hh:mm a').format(scheduledDateTime!)
+                                    : "Select date and time",
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                              color: Colors.grey[600],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.only(top: 40),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(
                           "Payment Details",
                           style: GoogleFonts.inter(
                             fontSize: 16,
@@ -938,6 +1176,20 @@ class _SendPageState extends State<SendPage> {
                               SnackBar(
                                 backgroundColor: Colors.red,
                                 content: Text("Please select a payment method"),
+                              ),
+                            );
+                          } else if (isScheduled && scheduledDateTime == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: Colors.red,
+                                content: Text("Please select a scheduled date and time"),
+                              ),
+                            );
+                          } else if (isScheduled && scheduledDateTime!.isBefore(DateTime.now())) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: Colors.red,
+                                content: Text("Please select a future date and time"),
                               ),
                             );
                           } else {

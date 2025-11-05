@@ -47,5 +47,7 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>MBXAccessToken</key>
+		<string>pk.eyJ1Ijoia2lva28xMjEiLCJhIjoiY21la2FxMG8wMDViYjJrcXZ3MWFmd2ZvZSJ9.3FCWY9P2G8ZKrmLG1XZWcw</string>
 	</dict>
 </plist>

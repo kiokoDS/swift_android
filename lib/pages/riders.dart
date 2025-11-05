@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -11,6 +12,7 @@ class Riders extends StatefulWidget {
 
 class _RidersPageState extends State<Riders> {
   final Dio dio = Dio();
+
   List<dynamic> orders = [];
   bool isLoading = true;
 
@@ -19,10 +21,31 @@ class _RidersPageState extends State<Riders> {
     return prefs.getString("token");
   }
 
+  //pagination
+  int page = 0;
+  bool hasMore = true;
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
     fetchOrders();
+    _scrollController.addListener(_scrollListener);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200 &&
+        !isLoading &&
+        hasMore) {
+      fetchOrders();
+    }
   }
 
   Future<void> fetchOrders() async {
@@ -31,7 +54,7 @@ class _RidersPageState extends State<Riders> {
 
     try {
       var response = await dio.request(
-        'http://209.126.8.100:4141/api/drivers/all?page=0',
+        'http://209.126.8.100:4141/api/drivers/assigned-to-me?page=${page}',
         options: Options(method: 'GET', headers: headers),
       );
 
@@ -39,6 +62,8 @@ class _RidersPageState extends State<Riders> {
         setState(() {
           orders = response.data["items"] ?? response.data;
           isLoading = false;
+          page++;
+          hasMore = !response.data["last"];
         });
       } else {
         print("Error: ${response.statusMessage}");
@@ -73,17 +98,19 @@ class _RidersPageState extends State<Riders> {
               ),
             )
           : ListView.builder(
+              controller: _scrollController,
               padding: EdgeInsets.all(12),
               itemCount: orders.length,
               itemBuilder: (context, index) {
                 final order = orders[index];
-                var ff = DateTime.tryParse(order["createdAt"]);
+                var ff = DateTime.tryParse(order["lastOrderAt"]);
 
                 return RiderCard(
-                  name: order["User"]["Username"] ?? "N/A",
+                  name: order["username"] ?? "N/A",
                   licensePlate: order["licensePlate"] ?? "N/A",
-                  rating: order["rating"]?.toString() ?? "N/A",
+                  rating: order["rating"] ?? "N/A",
                   createdAt: ff,
+                  norides: order["ridesWithYou"].toString() ?? "N/A",
                 );
               },
             ),
@@ -94,8 +121,9 @@ class _RidersPageState extends State<Riders> {
 class RiderCard extends StatelessWidget {
   final String name;
   final String licensePlate;
-  final String rating;
+  final int rating;
   final DateTime? createdAt;
+  final String norides;
 
   const RiderCard({
     super.key,
@@ -103,92 +131,107 @@ class RiderCard extends StatelessWidget {
     required this.licensePlate,
     required this.rating,
     this.createdAt,
+    required this.norides,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 1,
-      //color: Colors.orange[100],
-      color: Colors.grey[100],
-      margin: EdgeInsets.symmetric(vertical: 8),
-
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.grey, width: 0.5)),
+      ),
+      child: ListTile(
+        leading: Container(
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+            borderRadius: BorderRadius.circular(25),
+          ),
+          child: Padding(
+            padding: EdgeInsetsGeometry.all(10),
+            child: Image.asset(
+              "assets/images/rider.png",
+              fit: BoxFit.contain,
+              height: 40,
+              width: 40,
+            ),
+          ),
+        ),
+        title: Text(
+          name,
+          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800),
+        ),
+        subtitle: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Rider Image
-            Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                image: DecorationImage(
-                  image: AssetImage("assets/images/rider.png"),
-                  fit: BoxFit.cover,
-                ),
+            Text(
+              "Plates: " + licensePlate,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
               ),
             ),
-            SizedBox(width: 16),
-            // Rider Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.deepOrange.shade700,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    "Plates: $licensePlate",
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    "Last delivery: ${createdAt != null ? timeago.format(createdAt!) : "N/A"}",
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Align(
-                    alignment: AlignmentGeometry.centerRight,
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepOrange,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 8,
-                        ),
-                      ),
-                      child: Text(
-                        "Report",
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+            Text(
+              "No of rides: " + norides,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
               ),
             ),
+            SizedBox(height: 5),
+            buildRating2(rating.toDouble()),
+
           ],
         ),
+        trailing: IconButton(onPressed: (){
+
+        }, icon: Icon(Icons.call,color: Colors.deepOrange,)),
       ),
     );
   }
+}
+
+Widget buildRating(
+  double rating, {
+  double size = 15,
+  Color color = Colors.amber,
+}) {
+  // Clamp rating between 0 and 5 just in case
+  rating = rating.clamp(0, 5);
+
+  List<Widget> stars = [];
+
+  for (int i = 1; i <= 5; i++) {
+    if (i <= rating) {
+      stars.add(Icon(Icons.star, color: color, size: size));
+    } else if (i - rating <= 0.5) {
+      stars.add(Icon(Icons.star_half, color: color, size: size));
+    } else {
+      stars.add(Icon(Icons.star_border, color: color, size: size));
+    }
+  }
+
+  return Row(mainAxisSize: MainAxisSize.min, children: stars);
+}
+
+
+Widget buildRating2(
+  double rating
+){
+  return RatingBar.builder(
+    itemSize: 15,
+    initialRating: rating,
+    minRating: 0,
+    direction: Axis.horizontal,
+    allowHalfRating: false,
+    itemCount: 5,
+    itemBuilder: (context,_) => Icon(
+      Icons.star,
+      color: Colors.amber,
+    ), 
+    onRatingUpdate: (rating){
+
+    });
 }

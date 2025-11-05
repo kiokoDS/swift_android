@@ -3,13 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:new_loading_indicator/new_loading_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swift/pages/receive.dart';
 import 'package:swift/pages/request.dart';
 import 'package:swift/pages/riders.dart';
+import 'package:swift/pages/schedule.dart';
 import 'package:swift/pages/send.dart';
 import 'package:swift/pages/ui/Etacard.dart';
 import 'package:swift/services/nominatimservice.dart';
+import 'package:swift/services/mapbox_service.dart'; // ✅ new
+import 'package:swift/services/photon_service.dart';
 
 class Homepage extends StatefulWidget {
   @override
@@ -18,7 +22,11 @@ class Homepage extends StatefulWidget {
 
 class _HomepageState extends State<Homepage> {
   final NominatimService _nominatimService = NominatimService();
+  final MapboxService _mapboxService = MapboxService();
+  final PhotonService _photonService = PhotonService();
+
   final TextEditingController _controller = TextEditingController();
+
   bool _isDraggingPin = false;
   LatLng? _draggedPosition;
   String? selectedCoordinates;
@@ -45,7 +53,7 @@ class _HomepageState extends State<Homepage> {
       "title": "Schedule",
       "subtitle": "deliver later",
       "asset": "assets/images/mail.png",
-      "page": Requestpage(),
+      "page": SchedulePage(),
     },
     {
       "title": "Riders",
@@ -61,23 +69,35 @@ class _HomepageState extends State<Homepage> {
 
     try {
       var response = await dio.request(
-        'http://209.126.8.100:4141/api/orders/all?page=0',
+        'http://209.126.8.100:4141/api/orders/pending?page=0',
         options: Options(method: 'GET', headers: headers),
       );
 
       if (response.statusCode == 200) {
         setState(() {
           orders =
-              response.data["items"] ??
+              response.data ??
               response.data; // Adjust depending on API structure
           isLoading = false;
+
+          print(
+            "------------------------------------no error----------------------------",
+          );
+
+          print("Orders fetched: ${orders.length}");
         });
       } else {
+        print(
+          "------------------------------------error----------------------------",
+        );
         print("Error: ${response.statusMessage}");
         print("Token: $token");
         setState(() => isLoading = false);
       }
     } catch (e) {
+      print(
+        "------------------------------------big error----------------------------",
+      );
       print("Exception: $e");
       print(headers);
       setState(() => isLoading = false);
@@ -154,7 +174,6 @@ class _HomepageState extends State<Homepage> {
                   ),
 
                   _buildSearchBox(),
-                  
 
                   Padding(
                     padding: EdgeInsets.only(top: 10, bottom: 20),
@@ -230,16 +249,26 @@ class _HomepageState extends State<Homepage> {
                   ),
 
                   isLoading
-                      ? CircularProgressIndicator()
+                      ? Container(
+                        height: 100,
+                        child: LoadingIndicator(
+                          indicatorType: Indicator.ballPulseSync,
+                          colors: const [Colors.deepOrangeAccent],
+                          strokeWidth: 2,
+                        ),
+                      )
                       : Padding(
                           padding: EdgeInsets.only(top: 20),
                           child: SingleChildScrollView(
                             child: Column(
                               children: orders.map((order) {
-                                return Padding(padding: EdgeInsets.only(bottom: 10), child: EtaCard(
-                                  driverName: "driver1",
-                                  etaText: "5 mins",
-                                ));
+                                return Padding(
+                                  padding: EdgeInsets.only(bottom: 10),
+                                  child: EtaCard(
+                                    driverName: "driver1",
+                                    etaText: "5 mins",
+                                  ),
+                                );
                               }).toList(),
                             ),
                           ),
@@ -270,7 +299,7 @@ class _HomepageState extends State<Homepage> {
                 direction: VerticalDirection.down,
                 suggestionsCallback: (pattern) async {
                   if (pattern.isEmpty) return [];
-                  return await _nominatimService.searchLocations(pattern);
+                  return await _photonService.searchLocations(pattern);
                 },
                 itemBuilder: (context, suggestion) {
                   return Container(

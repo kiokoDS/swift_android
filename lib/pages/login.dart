@@ -120,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: EmailController,
                           style: GoogleFonts.inter(fontSize: 14),
                           decoration: InputDecoration(
-                            hintText: "Username or email",
+                            hintText: "Username",
                             border: InputBorder
                                 .none, // remove default TextField border
                           ),

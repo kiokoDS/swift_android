@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swift/pages/index.dart';
 import 'pages/login.dart';
@@ -18,9 +19,14 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var authenticated = false;
+
     getToken().then((token) async {
       authenticated = token != null;
     });
+
+    String ACCESS_TOKEN = String.fromEnvironment("ACCESS_TOKEN");
+    MapboxOptions.setAccessToken(ACCESS_TOKEN);
+
     return FutureBuilder(
       future: getToken(),
       builder: (context, snapshot) {
