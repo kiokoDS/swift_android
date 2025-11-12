@@ -510,14 +510,14 @@ class _SendPageState extends State<SendPage> {
   }
 
   void processPayment() {
-    if (selectedValue == "Mpesa") {
+    if (selectedValue == "Online") {
       // Process M-Pesa payment via Paystack
       FlutterPaystackPlus.openPaystackPopup(
         context: context,
         secretKey: "sk_test_b24253c87dfd841bdc86edbefb243622b8e59422",
         currency: "KES",
         customerEmail: "toobafah40@gmail.com",
-        amount: fare.toString(),
+        amount: (fare * 100).toString(),
         reference: generateRef(),
         onClosed: () {
           print("Payment closed");
@@ -606,7 +606,7 @@ class _SendPageState extends State<SendPage> {
   String? selectedCoordinates;
   bool _isLoading = false;
 
-  List<String> choices = ['Mpesa', 'Cash'];
+  List<String> choices = ['Online', 'Cash'];
 
   String? selectedValue;
 
@@ -880,7 +880,7 @@ class _SendPageState extends State<SendPage> {
                     padding: EdgeInsets.only(top: 10),
                     child: AnimatedSwitcher(
                       duration: Duration(milliseconds: 300),
-                      child: selectedValue == "Mpesa"
+                      child: selectedValue == "Mpesa" && 1 > 2
                           ? Container(
                               height: 50,
                               padding: EdgeInsets.symmetric(

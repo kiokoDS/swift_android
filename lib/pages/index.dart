@@ -8,6 +8,8 @@ import 'package:swift/pages/homepage.dart';
 import 'package:swift/pages/orderspage.dart';
 import 'package:swift/pages/payments.dart';
 import 'package:swift/pages/promotions.dart';
+import 'package:swift/pages/support.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class Indexpage extends StatefulWidget {
   @override
@@ -165,19 +167,27 @@ class _IndexAppState extends State<Indexpage> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              onTap: () => _onItemTapped(2),
+              onTap: () async {
+                final Uri url = Uri.parse('http://185.196.20.88:8080/');
+                if (!await launchUrl(
+                  url,
+                  mode: LaunchMode.externalApplication,
+                )) {
+                  throw Exception('Could not launch $url');
+                }
+              },
             ),
-            ListTile(
-              leading: Icon(Icons.money, size: 20),
-              title: Text(
-                "Expenses",
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              onTap: () => _onItemTapped(2),
-            ),
+            // ListTile(
+            //   leading: Icon(Icons.money, size: 20),
+            //   title: Text(
+            //     "Expenses",
+            //     style: GoogleFonts.inter(
+            //       fontSize: 14,
+            //       fontWeight: FontWeight.w600,
+            //     ),
+            //   ),
+            //   onTap: () => _onItemTapped(2),
+            // ),
             ListTile(
               leading: Icon(FeatherIcons.phoneCall, size: 20),
               title: Text(
@@ -187,7 +197,12 @@ class _IndexAppState extends State<Indexpage> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              onTap: () => _onItemTapped(2),
+              onTap: () => {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => SupportPage()),
+                ),
+              },
             ),
             ListTile(
               leading: Icon(FeatherIcons.info, size: 20),

@@ -182,12 +182,12 @@ class RiderCard extends StatelessWidget {
             ),
             SizedBox(height: 5),
             buildRating2(rating.toDouble()),
-
           ],
         ),
-        trailing: IconButton(onPressed: (){
-
-        }, icon: Icon(Icons.call,color: Colors.deepOrange,)),
+        trailing: IconButton(
+          onPressed: () {},
+          icon: Icon(Icons.call, color: Colors.deepOrange),
+        ),
       ),
     );
   }
@@ -216,10 +216,7 @@ Widget buildRating(
   return Row(mainAxisSize: MainAxisSize.min, children: stars);
 }
 
-
-Widget buildRating2(
-  double rating
-){
+Widget buildRating2(double rating) {
   return RatingBar.builder(
     itemSize: 15,
     initialRating: rating,
@@ -227,11 +224,7 @@ Widget buildRating2(
     direction: Axis.horizontal,
     allowHalfRating: false,
     itemCount: 5,
-    itemBuilder: (context,_) => Icon(
-      Icons.star,
-      color: Colors.amber,
-    ), 
-    onRatingUpdate: (rating){
-
-    });
+    itemBuilder: (context, _) => Icon(Icons.star, color: Colors.amber),
+    onRatingUpdate: (rating) {},
+  );
 }

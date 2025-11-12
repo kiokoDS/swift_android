@@ -180,61 +180,7 @@ class _ProfilepageState extends State<AccountPage> {
                           ),
                         ),
                       ),
-                      Padding(
-                        padding: EdgeInsets.only(top: 20, bottom: 10),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            "Saved places",
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsetsGeometry.only(top: 0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(color: Colors.grey, width: 1),
-                            ),
-                          ),
-                          child: ListTile(
-                            leading: Icon(FeatherIcons.home, size: 22),
-                            trailing: Icon(Icons.arrow_forward_ios, size: 15),
-                            title: Text(
-                              "Add Home Address",
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsetsGeometry.only(top: 0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(color: Colors.grey, width: 1),
-                            ),
-                          ),
-                          child: ListTile(
-                            leading: Icon(FeatherIcons.briefcase, size: 22),
-                            trailing: Icon(Icons.arrow_forward_ios, size: 15),
-                            title: Text(
-                              "Add Work Address",
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                     
                       Padding(
                         padding: EdgeInsets.only(top: 20, bottom: 10),
                         child: Align(

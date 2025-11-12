@@ -169,8 +169,20 @@ class _OrdersPageState extends State<OrdersPage> {
                           segments: getSegments(
                             order["status"] ?? "pending",
                           ), // or 'pending' / 'complete'
+                          
                         ),
 
+                        SizedBox(height: 10),
+
+                        Text(
+                            "Click to track your order status",
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w300,
+                              color: Colors.grey[600],
+                            ),
+                          )
+                        
                         // Container(
                         //   decoration: BoxDecoration(
                         //     borderRadius: BorderRadius.circular(10),

@@ -10,6 +10,7 @@ import 'package:swift/pages/request.dart';
 import 'package:swift/pages/riders.dart';
 import 'package:swift/pages/schedule.dart';
 import 'package:swift/pages/send.dart';
+import 'package:swift/pages/support.dart';
 import 'package:swift/pages/ui/Etacard.dart';
 import 'package:swift/services/nominatimservice.dart';
 import 'package:swift/services/mapbox_service.dart'; // ✅ new
@@ -44,17 +45,18 @@ class _HomepageState extends State<Homepage> {
       "page": SendPage(),
     },
     {
-      "title": "Receive",
-      "subtitle": "package delivery",
-      "asset": "assets/images/hands.png",
-      "page": Receivepage(),
-    },
-    {
       "title": "Schedule",
       "subtitle": "deliver later",
       "asset": "assets/images/mail.png",
       "page": SchedulePage(),
     },
+    {
+      "title": "Support",
+      "subtitle": "package delivery",
+      "asset": "assets/images/support.png",
+      "page": SupportPage(),
+    },
+    
     {
       "title": "Riders",
       "subtitle": "previous riders",
@@ -239,7 +241,7 @@ class _HomepageState extends State<Homepage> {
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Text(
-                        "Recent Activity",
+                        "Ongoing Deliveries",
                         style: GoogleFonts.inter(
                           fontWeight: FontWeight.w800,
                           fontSize: 16,
@@ -250,13 +252,13 @@ class _HomepageState extends State<Homepage> {
 
                   isLoading
                       ? Container(
-                        height: 100,
-                        child: LoadingIndicator(
-                          indicatorType: Indicator.ballPulseSync,
-                          colors: const [Colors.deepOrangeAccent],
-                          strokeWidth: 2,
-                        ),
-                      )
+                          height: 100,
+                          child: LoadingIndicator(
+                            indicatorType: Indicator.ballPulseSync,
+                            colors: const [Colors.deepOrangeAccent],
+                            strokeWidth: 2,
+                          ),
+                        )
                       : Padding(
                           padding: EdgeInsets.only(top: 20),
                           child: SingleChildScrollView(
