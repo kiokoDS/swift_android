@@ -89,7 +89,7 @@ class _TrackerState extends State<Tracker> {
       var key = await getToken();
       final dio = Dio();
       final response = await dio.request(
-        'http://209.126.8.100:4141/api/orders/${widget.orderid}/details',
+        'https://www.swiftnet.site/backend/api/orders/${widget.orderid}/details',
         options: Options(
           method: 'GET',
           headers: {'Authorization': 'Bearer $key'},
@@ -114,7 +114,7 @@ class _TrackerState extends State<Tracker> {
       var key = await getToken();
       final dio = Dio();
       final response = await dio.request(
-        'http://209.126.8.100:4141/api/orders/${widget.orderid}/details',
+        'https://www.swiftnet.site/backend/api/orders/${widget.orderid}/details',
         options: Options(
           method: 'GET',
           headers: {'Authorization': 'Bearer $key'},

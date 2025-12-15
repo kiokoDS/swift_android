@@ -1,7 +1,14 @@
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
 import 'package:feather_icons/feather_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:new_loading_indicator/new_loading_indicator.dart';
 import 'package:swift/pages/login.dart';
+import 'package:swift/pages/passwordreset.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AccountPage extends StatefulWidget {
   @override
@@ -9,6 +16,67 @@ class AccountPage extends StatefulWidget {
 }
 
 class _ProfilepageState extends State<AccountPage> {
+
+  var userid = "";
+  var loading = false;
+  var userrating = "";
+
+  Future<String?> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userid = prefs.getString("user_id")!;
+    });
+    return prefs.getString("token");
+  }
+
+  Future<void> saveRating(String rating) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString("rating", rating);
+  }
+
+
+  Future<void> getUserRating() async {
+    setState(() {
+      loading = true;
+    });
+    var key = await getToken();
+    var headers = {
+      'Authorization': "Bearer ${key}"
+    };
+    var dio = Dio();
+    var response = await dio.request(
+      'https://www.swiftnet.site/backend/api/user/6/rating',
+      options: Options(
+        method: 'GET',
+        headers: headers,
+      ),
+    );
+
+    if (response.statusCode == 200) {
+      print(json.encode(response.data));
+
+      var rating = response.data["rating"];
+      await saveRating(rating.toString());
+
+      setState(() {
+        loading = false;
+        userrating = rating.toString();
+      });
+    }
+    else {
+      print(response.statusMessage);
+      setState(() {
+        loading = false;
+      });
+    }
+  }
+
+  @override
+  void initState(){
+    super.initState();
+    getUserRating();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,7 +120,14 @@ class _ProfilepageState extends State<AccountPage> {
 
                       Padding(
                         padding: EdgeInsets.only(top: 5),
-                        child: Row(
+                        child: loading? SizedBox(
+                          height: 20,
+                          child: LoadingIndicator(
+                            indicatorType: Indicator.ballPulseSync,
+                            colors: const [Colors.deepOrangeAccent],
+                            strokeWidth: 2,
+                          ),
+                        ) : Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -64,7 +139,7 @@ class _ProfilepageState extends State<AccountPage> {
                             Padding(
                               padding: EdgeInsets.only(left: 5, right: 5),
                               child: Text(
-                                "5.0",
+                                userrating,
                                 style: GoogleFonts.inter(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
@@ -96,27 +171,27 @@ class _ProfilepageState extends State<AccountPage> {
                           ),
                         ),
                       ),
-                      Padding(
-                        padding: EdgeInsetsGeometry.only(top: 20),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(color: Colors.grey, width: 1),
-                            ),
-                          ),
-                          child: ListTile(
-                            leading: Icon(FeatherIcons.user, size: 22),
-                            trailing: Icon(Icons.arrow_forward_ios, size: 15),
-                            title: Text(
-                              "Personal Info",
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                      // Padding(
+                      //   padding: EdgeInsetsGeometry.only(top: 20),
+                      //   child: Container(
+                      //     decoration: BoxDecoration(
+                      //       border: Border(
+                      //         bottom: BorderSide(color: Colors.grey, width: 1),
+                      //       ),
+                      //     ),
+                      //     child: ListTile(
+                      //       leading: Icon(FeatherIcons.user, size: 22),
+                      //       trailing: Icon(Icons.arrow_forward_ios, size: 15),
+                      //       title: Text(
+                      //         "Personal Info",
+                      //         style: GoogleFonts.inter(
+                      //           fontSize: 14,
+                      //           fontWeight: FontWeight.w400,
+                      //         ),
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
                       Padding(
                         padding: EdgeInsetsGeometry.only(top: 0),
                         child: Container(
@@ -129,7 +204,7 @@ class _ProfilepageState extends State<AccountPage> {
                             leading: Icon(FeatherIcons.shield, size: 22),
                             trailing: Icon(Icons.arrow_forward_ios, size: 15),
                             title: Text(
-                              "Safety",
+                              "Safety & Privacy",
                               style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
@@ -146,41 +221,43 @@ class _ProfilepageState extends State<AccountPage> {
                               bottom: BorderSide(color: Colors.grey, width: 1),
                             ),
                           ),
-                          child: ListTile(
-                            leading: Icon(FeatherIcons.lock, size: 22),
-                            trailing: Icon(Icons.arrow_forward_ios, size: 15),
-                            title: Text(
-                              "Login & Security",
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
+                          child: GestureDetector(
+                            onTap:  () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PasswordReset(),
+                                ),
+                              );
+                            },
+                            child: GestureDetector(
+                              onTap: ()
+                                async {
+                                  final Uri url = Uri.parse('https://swiftnet.site');
+                                  if (!await launchUrl(
+                                  url,
+                                  mode: LaunchMode.externalApplication,
+                                  )) {
+                                throw Exception('Could not launch $url');
+                                }
+
+                              },
+                              child: ListTile(
+                                leading: Icon(FeatherIcons.lock, size: 22),
+                                trailing: Icon(Icons.arrow_forward_ios, size: 15),
+                                title: Text(
+                                  "Login & Security",
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                      Padding(
-                        padding: EdgeInsetsGeometry.only(top: 0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(color: Colors.grey, width: 1),
-                            ),
-                          ),
-                          child: ListTile(
-                            leading: Icon(Icons.privacy_tip, size: 22),
-                            trailing: Icon(Icons.arrow_forward_ios, size: 15),
-                            title: Text(
-                              "Privacy",
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                     
+
                       Padding(
                         padding: EdgeInsets.only(top: 20, bottom: 10),
                         child: Align(
@@ -225,27 +302,27 @@ class _ProfilepageState extends State<AccountPage> {
                           ),
                         ),
                       ),
-                      Padding(
-                        padding: EdgeInsetsGeometry.only(top: 0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(color: Colors.grey, width: 1),
-                            ),
-                          ),
-                          child: ListTile(
-                            leading: Icon(FeatherIcons.delete, size: 22),
-                            trailing: Icon(Icons.arrow_forward_ios, size: 15),
-                            title: Text(
-                              "Delete Account",
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                      // Padding(
+                      //   padding: EdgeInsetsGeometry.only(top: 0),
+                      //   child: Container(
+                      //     decoration: BoxDecoration(
+                      //       border: Border(
+                      //         bottom: BorderSide(color: Colors.grey, width: 1),
+                      //       ),
+                      //     ),
+                      //     child: ListTile(
+                      //       leading: Icon(FeatherIcons.delete, size: 22),
+                      //       trailing: Icon(Icons.arrow_forward_ios, size: 15),
+                      //       title: Text(
+                      //         "Delete Account",
+                      //         style: GoogleFonts.inter(
+                      //           fontSize: 14,
+                      //           fontWeight: FontWeight.w400,
+                      //         ),
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),

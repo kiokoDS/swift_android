@@ -60,7 +60,7 @@ class _HomepageState extends State<Homepage> {
     {
       "title": "Riders",
       "subtitle": "previous riders",
-      "asset": "assets/images/rider.png",
+      "asset": "assets/images/bike2.png",
       "page": Riders(),
     },
   ];
@@ -71,7 +71,7 @@ class _HomepageState extends State<Homepage> {
 
     try {
       var response = await dio.request(
-        'http://209.126.8.100:4141/api/orders/pending?page=0',
+        'https://www.swiftnet.site/backend/api/orders/pending?page=0',
         options: Options(method: 'GET', headers: headers),
       );
 

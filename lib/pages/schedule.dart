@@ -151,7 +151,7 @@ class _SchedulePageState extends State<SchedulePage> {
     });
     var dio = Dio();
     var response = await dio.request(
-      'http://209.126.8.100:4141/api/fare/calculate',
+      'https://www.swiftnet.site/backend/api/fare/calculate',
       options: Options(method: 'POST', headers: headers),
       data: data,
     );
@@ -212,7 +212,7 @@ class _SchedulePageState extends State<SchedulePage> {
 
     var dio = Dio();
     var response = await dio.request(
-      'http://209.126.8.100:4141/api/orders/create',
+      'https://www.swiftnet.site/backend/api/orders/create',
       options: Options(method: 'POST', headers: headers),
       data: data,
     );
@@ -344,7 +344,7 @@ class _SchedulePageState extends State<SchedulePage> {
     var data = {'orderId': orderid};
     var dio = Dio();
     var response = await dio.request(
-      'http://209.126.8.100:4141/api/orders/match-driver',
+      'https://www.swiftnet.site/backend/api/orders/match-driver',
       options: Options(method: 'POST', headers: headers),
       data: data,
     );

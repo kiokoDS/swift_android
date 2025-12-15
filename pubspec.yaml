@@ -77,6 +77,7 @@ flutter:
     - assets/images/driver.png
     - assets/images/avatar.jpg
     - assets/images/support.png
+    - assets/images/bike2.png
 
 # 👇 flutter_native_splash config goes here
 flutter_native_splash:

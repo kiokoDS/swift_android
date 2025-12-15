@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
@@ -16,8 +18,16 @@ class _RidersPageState extends State<Riders> {
   List<dynamic> orders = [];
   bool isLoading = true;
 
+  var userid = "";
+  var token = "";
+
+
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      userid = prefs.getString("user_id")!;
+      token = prefs.getString("token")!;
+    });
     return prefs.getString("token");
   }
 
@@ -30,6 +40,7 @@ class _RidersPageState extends State<Riders> {
   void initState() {
     super.initState();
     fetchOrders();
+    getToken();
     _scrollController.addListener(_scrollListener);
   }
 
@@ -54,7 +65,7 @@ class _RidersPageState extends State<Riders> {
 
     try {
       var response = await dio.request(
-        'http://209.126.8.100:4141/api/drivers/assigned-to-me?page=${page}',
+        'https://www.swiftnet.site/backend/api/drivers/assigned-to-me?page=${page}',
         options: Options(method: 'GET', headers: headers),
       );
 
@@ -111,6 +122,9 @@ class _RidersPageState extends State<Riders> {
                   rating: order["rating"] ?? "N/A",
                   createdAt: ff,
                   norides: order["ridesWithYou"].toString() ?? "N/A",
+                  riderid: order["user_id"].toString(),
+                  userid: userid.toString(),
+                  token: token,
                 );
               },
             ),
@@ -124,6 +138,9 @@ class RiderCard extends StatelessWidget {
   final int rating;
   final DateTime? createdAt;
   final String norides;
+  final String riderid;
+  final String userid;
+  final String token;
 
   const RiderCard({
     super.key,
@@ -132,6 +149,9 @@ class RiderCard extends StatelessWidget {
     required this.rating,
     this.createdAt,
     required this.norides,
+    required this.riderid,
+    required this.userid,
+    required this.token
   });
 
   @override
@@ -181,7 +201,7 @@ class RiderCard extends StatelessWidget {
               ),
             ),
             SizedBox(height: 5),
-            buildRating2(rating.toDouble()),
+            buildRating2(rating.toDouble(), userid, riderid, token),
           ],
         ),
         trailing: IconButton(
@@ -197,6 +217,8 @@ Widget buildRating(
   double rating, {
   double size = 15,
   Color color = Colors.amber,
+      required String riderid,
+      required String userid
 }) {
   // Clamp rating between 0 and 5 just in case
   rating = rating.clamp(0, 5);
@@ -216,7 +238,38 @@ Widget buildRating(
   return Row(mainAxisSize: MainAxisSize.min, children: stars);
 }
 
-Widget buildRating2(double rating) {
+Widget buildRating2(double rating, String userid, String riderid, String key) {
+
+  Future <void> updateRating(int ratings) async{
+    print(ratings);
+    var headers = {
+      'Content-Type': 'application/json',
+      'Authorization': "Bearer ${key}"
+    };
+    var data = json.encode({
+      "rating": ratings,
+      "ratingby": userid,
+      "user_id": riderid
+    });
+    var dio = Dio();
+    var response = await dio.request(
+      'https://www.swiftnet.site/backend/api/user/rating',
+      options: Options(
+        method: 'POST',
+        headers: headers,
+      ),
+      data: data,
+    );
+
+    if (response.statusCode == 200) {
+      print(json.encode(response.data));
+    }
+    else {
+      print(response.statusMessage);
+    }
+  }
+
+
   return RatingBar.builder(
     itemSize: 15,
     initialRating: rating,
@@ -225,6 +278,8 @@ Widget buildRating2(double rating) {
     allowHalfRating: false,
     itemCount: 5,
     itemBuilder: (context, _) => Icon(Icons.star, color: Colors.amber),
-    onRatingUpdate: (rating) {},
+    onRatingUpdate: (rating) {
+      updateRating(rating.round());
+    },
   );
 }

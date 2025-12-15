@@ -7,6 +7,7 @@ import 'package:new_loading_indicator/new_loading_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:swift/pages/index.dart';
 import 'package:swift/pages/register.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -28,6 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
     await prefs.setString("token", token);
     await prefs.setString("username", decodedToken["username"]);
     await prefs.setString("phone", decodedToken["phone"]);
+    await prefs.setString("email", decodedToken["email"]);
     await prefs.setString("user_id", decodedToken["user_id"].toString());
   }
 
@@ -38,9 +40,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await dio.post(
-        "http://209.126.8.100:4141/login",
+        "https://www.swiftnet.site/backend/login",
         data: {
-          "username": EmailController.text,
+          "identifier": EmailController.text,
           "password": PasswordController.text,
         },
       );
@@ -54,6 +56,9 @@ class _LoginScreenState extends State<LoginScreen> {
         MaterialPageRoute(builder: (context) => Indexpage()),
       );
     } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+         SnackBar(content: Text("login failed, try again later", style: GoogleFonts.inter()), backgroundColor: Colors.red,)
+      );
       print("Error: $e");
       setState(() {
         _isLoading = false;

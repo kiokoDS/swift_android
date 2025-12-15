@@ -11,15 +11,17 @@ class OrdersPage extends StatefulWidget {
   State<OrdersPage> createState() => _OrdersPageState();
 }
 
-// Use the Segment class exported by the primer_progress_bar package
-// (removed local duplicate to avoid type conflict with package's Segment).
-
 class _OrdersPageState extends State<OrdersPage> {
   var token = "";
 
   final Dio dio = Dio();
   List<dynamic> orders = [];
   bool isLoading = true;
+  bool isLoadingMore = false;
+
+  int currentPage = 0;
+  int totalPages = 0;
+  bool isLastPage = false;
 
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -37,32 +39,64 @@ class _OrdersPageState extends State<OrdersPage> {
     fetchOrders();
   }
 
-  Future<void> fetchOrders() async {
+  Future<void> fetchOrders({bool loadMore = false}) async {
     var key = await getToken();
     var headers = {'Authorization': "Bearer ${key}"};
 
+    // Set loading state
+    if (loadMore) {
+      setState(() => isLoadingMore = true);
+    } else {
+      setState(() => isLoading = true);
+    }
+
     try {
       var response = await dio.request(
-        'http://209.126.8.100:4141/api/orders/all?page=0',
+        'https://www.swiftnet.site/backend/api/orders/all?page=$currentPage',
         options: Options(method: 'GET', headers: headers),
       );
 
       if (response.statusCode == 200) {
         setState(() {
-          orders =
-              response.data["items"] ??
-              response.data; // Adjust depending on API structure
+          if (loadMore) {
+            // Append new orders to existing list
+            orders.addAll(response.data["items"] ?? []);
+          } else {
+            // Replace orders list
+            orders = response.data["items"] ?? [];
+          }
+
+          // Update pagination info
+          totalPages = response.data["total_pages"] ?? 0;
+          isLastPage = response.data["last"] ?? false;
+
           isLoading = false;
+          isLoadingMore = false;
         });
       } else {
         print("Error: ${response.statusMessage}");
         print("Token: $token");
-        setState(() => isLoading = false);
+        setState(() {
+          isLoading = false;
+          isLoadingMore = false;
+        });
       }
     } catch (e) {
       print("Exception: $e");
       print(headers);
-      setState(() => isLoading = false);
+      setState(() {
+        isLoading = false;
+        isLoadingMore = false;
+      });
+    }
+  }
+
+  void loadMoreOrders() {
+    if (!isLastPage && !isLoadingMore) {
+      setState(() {
+        currentPage++;
+      });
+      fetchOrders(loadMore: true);
     }
   }
 
@@ -79,25 +113,29 @@ class _OrdersPageState extends State<OrdersPage> {
       ),
       body: isLoading
           ? Center(
-              child: Container(
-                height: 100,
-                child: LoadingIndicator(
-                  indicatorType: Indicator.ballPulseSync,
-                  colors: const [Colors.deepOrangeAccent],
-                  strokeWidth: 2,
-                ),
-              ),
-            )
+        child: Container(
+          height: 100,
+          child: LoadingIndicator(
+            indicatorType: Indicator.ballPulseSync,
+            colors: const [Colors.deepOrangeAccent],
+            strokeWidth: 2,
+          ),
+        ),
+      )
           : orders.isEmpty
           ? Center(child: Text("No orders found"))
-          : ListView.builder(
+          : Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
               itemCount: orders.length,
               itemBuilder: (context, index) {
                 final order = orders[index];
 
                 return Card(
                   color: Colors.white,
-                  margin: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  margin: EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
                   child: ListTile(
                     onTap: () {
                       print(order["orderId"]);
@@ -106,12 +144,12 @@ class _OrdersPageState extends State<OrdersPage> {
                         MaterialPageRoute(
                           builder: (context) => Tracker(
                             orderid: order["orderId"],
-                          ), // Replace with your detail page
+                          ),
                         ),
                       );
                     },
                     title: Padding(
-                      padding: EdgeInsetsGeometry.only(bottom: 10),
+                      padding: EdgeInsets.only(bottom: 10),
                       child: Row(
                         children: [
                           Container(
@@ -132,7 +170,7 @@ class _OrdersPageState extends State<OrdersPage> {
                           Container(
                             width: 210,
                             child: Padding(
-                              padding: EdgeInsetsGeometry.only(left: 10),
+                              padding: EdgeInsets.only(left: 10),
                               child: Text(
                                 overflow: TextOverflow.ellipsis,
                                 "${order["orderId"] ?? "N/A"}",
@@ -143,7 +181,6 @@ class _OrdersPageState extends State<OrdersPage> {
                         ],
                       ),
                     ),
-
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -164,45 +201,20 @@ class _OrdersPageState extends State<OrdersPage> {
                           ),
                         ),
                         SizedBox(height: 10),
-
                         PrimerProgressBar(
                           segments: getSegments(
                             order["status"] ?? "pending",
-                          ), // or 'pending' / 'complete'
-                          
+                          ),
                         ),
-
                         SizedBox(height: 10),
-
                         Text(
-                            "Click to track your order status",
-                            style: GoogleFonts.inter(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w300,
-                              color: Colors.grey[600],
-                            ),
-                          )
-                        
-                        // Container(
-                        //   decoration: BoxDecoration(
-                        //     borderRadius: BorderRadius.circular(10),
-                        //     color: Colors.grey[700],
-                        //   ),
-                        //   child: Padding(
-                        //     padding: EdgeInsetsGeometry.only(
-                        //       left: 10,
-                        //       right: 10,
-                        //     ),
-                        //     child: Text(
-                        //       " ${order["status"] ?? "N/A"}",
-                        //       style: GoogleFonts.inter(
-                        //         fontSize: 10,
-                        //         fontWeight: FontWeight.w600,
-                        //         color: Colors.white,
-                        //       ),
-                        //     ),
-                        //   ),
-                        // ),
+                          "Click to track your order status",
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w300,
+                            color: Colors.grey[600],
+                          ),
+                        )
                       ],
                     ),
                     trailing: Text(
@@ -217,28 +229,75 @@ class _OrdersPageState extends State<OrdersPage> {
                 );
               },
             ),
+          ),
+          // Load More Button
+          if (!isLastPage)
+            Container(
+              padding: EdgeInsets.all(16),
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: isLoadingMore ? null : loadMoreOrders,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.deepOrangeAccent,
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: isLoadingMore
+                    ? SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                        Colors.white),
+                  ),
+                )
+                    : Text(
+                  "Load More Orders",
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          // Page indicator
+          if (!isLastPage)
+            Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text(
+                "Page ${currentPage + 1} of $totalPages",
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
   List<Segment> getSegments(String state) {
-    // Default percentages
     int pendingValue = 0;
     int inTransitValue = 0;
     int doneValue = 0;
 
-    // Assign percentage based on current state
     switch (state) {
       case 'pending':
         pendingValue = 80;
         inTransitValue = 14;
         doneValue = 0;
         break;
-      case 'in-transit':
+      case 'on_route':
         pendingValue = 0;
         inTransitValue = 80;
         doneValue = 14;
         break;
-      case 'complete':
+      case 'delivered':
         pendingValue = 0;
         inTransitValue = 0;
         doneValue = 100;

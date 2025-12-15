@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:932610158988:android:51cd5e4e44c8b8117f66a9",
         "android_client_info": {
-          "package_name": "com.example.swift"
+          "package_name": "com.kios19.swift"
         }
       },
       "oauth_client": [],
@@ -28,7 +28,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:932610158988:android:2f6266c8e86df7fb7f66a9",
         "android_client_info": {
-          "package_name": "com.example.swiftdriver"
+          "package_name": "com.kios19.swiftdriver"
         }
       },
       "oauth_client": [],

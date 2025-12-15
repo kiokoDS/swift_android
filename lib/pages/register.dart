@@ -16,6 +16,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<RegisterScreen> {
   final EmailController = TextEditingController();
+  final UsernameController = TextEditingController();
   final PasswordController = TextEditingController();
   final phoneController = PhoneController();
 
@@ -29,6 +30,7 @@ class _LoginScreenState extends State<RegisterScreen> {
 
     await prefs.setString("token", token);
     await prefs.setString("username", decodedToken["username"]);
+    await prefs.setString("email", decodedToken["email"]);
     await prefs.setString("phone", decodedToken["phone"]);
     await prefs.setString("user_id", decodedToken["user_id"].toString());
   }
@@ -40,11 +42,12 @@ class _LoginScreenState extends State<RegisterScreen> {
 
     try {
       final response = await dio.post(
-        "http://209.126.8.100:4141/register",
+        "https://www.swiftnet.site/backend/register",
         data: {
-          "username": EmailController.text,
+          "username": UsernameController.text,
+          "email": EmailController.text,
           "password": PasswordController.text,
-          "phone": phoneController.value,
+          "phone": "+254" + phoneController.value.nsn,
         },
       );
       setState(() {
@@ -95,6 +98,31 @@ class _LoginScreenState extends State<RegisterScreen> {
                     ),
 
                     Padding(
+                      padding: EdgeInsets.only(top: 20),
+                      child: Container(
+                        height: 50,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200], // background color
+                          borderRadius: BorderRadius.circular(
+                            10,
+                          ), // makes it rounded
+                        ),
+                        child: TextField(
+                          controller: UsernameController,
+                          style: GoogleFonts.inter(fontSize: 14),
+                          decoration: InputDecoration(
+                            hintText: "Username",
+                            border: InputBorder
+                                .none, // remove default TextField border
+                          ),
+                        ),
+                      ),
+                    ),
+                      Padding(
                       padding: EdgeInsets.only(top: 20),
                       child: Container(
                         height: 50,

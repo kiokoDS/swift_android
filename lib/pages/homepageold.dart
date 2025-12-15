@@ -132,7 +132,7 @@ class _HomePageState extends State<HomePageold> {
 
   final Dio dio = Dio();
 
-  Future<void> fetchPendingOrder() async {f
+  Future<void> fetchPendingOrder() async {
     var key = await getToken();
     var headers = {'Authorization': "Bearer ${key}"};
 
@@ -142,7 +142,7 @@ class _HomePageState extends State<HomePageold> {
 
     try {
       var response = await dio.request(
-        'http://209.126.8.100:4141/api/orders/pending',
+        'https://www.swiftnet.site/backend/api/orders/pending',
         options: Options(method: 'GET', headers: headers),
       );
 
@@ -177,7 +177,7 @@ class _HomePageState extends State<HomePageold> {
     var data = {'orderId': widget.orderid};
     var dio = Dio();
     var response = await dio.request(
-      'http://209.126.8.100:4141/api/orders/match-driver',
+      'https://www.swiftnet.site/backend/api/orders/match-driver',
       options: Options(method: 'POST', headers: headers),
       data: data,
     );
@@ -284,7 +284,7 @@ class _HomePageState extends State<HomePageold> {
     });
     var dio = Dio();
     var response = await dio.request(
-      'http://209.126.8.100:4141/api/fare/calculate',
+      'https://www.swiftnet.site/backend/api/fare/calculate',
       options: Options(method: 'POST', headers: headers),
       data: data,
     );
